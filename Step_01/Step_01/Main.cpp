@@ -1,80 +1,7 @@
-// ** Framework v0.3.2
-#define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
-#include <Windows.h>
-#include <string>
+// ** Framework v0.4.3
+#include"Headers.h"
 
-using namespace std;
-
-
-struct Vector3
-{
-	int x = 0, y = 0, z = 0;
-
-	// ** 기본 생성자
-	Vector3() {};
-
-	// ** 복사 생성자
-	Vector3(int _x, int _y)
-		: x(_x), y(_y), z(0) { };
-
-	// ** 복사 생성자
-	Vector3(int _x, int _y, int _z)
-		: x(_x), y(_y), z(_z) { };
-};
-
-struct Trasnsform
-{
-	Vector3 Position;
-	Vector3 Rotation;
-	Vector3 Scale;
-};
-
-struct Information
-{
-	char* Texture;
-	int Color;
-	int Option;
-};
-
-struct Object
-{
-	char* Name;
-	int Speed;
-
-	Information Info;
-	Trasnsform TransInfo;
-};
-
-
-struct DrawTextInfo
-{
-	Information Info;
-	Trasnsform TransInfo;
-};
-
-
-// ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
-void Initialize(Object* _Object, char* _Texture, int _PosX = 0, int _PosY = 0, int _PosZ = 0);
-
-// ** 이름을 셋팅하는 함수
-char* SetName();
-
-// ** 커서의 위치를 변경
-void SetCursorPosition(int _x, int _y);
-
-// ** Text의 색을 변경함.
-void SetTextColor(int _Color);
-
-// ** 출력할 Text의 위치와 색상을 변경해준다. [Color 값은 기본값 : 흰색(15)]
-void OnDrawText(char* _str, int _x, int _y, int _Color = 15);
-
-// ** 출력할 숫자의 위치와 색상을 변경해준다. [Color 값은 기본값 : 흰색(15)]
-void OnDrawText(int _Value, int _x, int _y, int _Color = 15);
-
-// ** 커서를 보이거나(true) / 안보이게(false) 만들어줌.
-void HideCursor(bool _Visible);
-
+// ** 몬스터와 투사체가 충돌하는거 만들기
 
 // ** 진입점.	
 int main(void)
@@ -130,6 +57,9 @@ int main(void)
 
 	int Score = 0;
 
+	Object* Bullet[128] = { nullptr };
+	int BulletCount = 0;
+
 	// ** 출력
 	while (true)
 	{
@@ -156,6 +86,20 @@ int main(void)
 				BackGround[i].Info.Color = rand() % 8 + 1;
 			}
 
+			for (int i = 0; i < 128; ++i)
+			{
+				if (Bullet[i]!=nullptr)
+				{
+					if ((Bullet[i]->TransInfo.Position.x+Bullet[i]->TransInfo.Scale.x)>=120)
+					{
+						delete Bullet[i];
+						Bullet[i] = nullptr;
+
+						--BulletCount;
+					}
+				}
+			}
+
 			// ** [상] 키를 입력받음.
 			if (GetAsyncKeyState(VK_UP))
 				Player->TransInfo.Position.y -= 1;
@@ -172,12 +116,21 @@ int main(void)
 			if (GetAsyncKeyState(VK_RIGHT))
 				Player->TransInfo.Position.x += 1;
 
-			// ** [Space] 키를 입력받음.
-			if (GetAsyncKeyState(VK_SPACE))
-				Player->Info.Texture = (char*)"옷ㅡ";
-			else
-				Player->Info.Texture = (char*)"옷/";
+			Collision(Player, Enemy);
 
+			if (GetAsyncKeyState(VK_SPACE))
+				for (int i = 0; i < 128; ++i)
+				{
+					if (Bullet[i] == nullptr)
+					{
+						Bullet[i] = CreatBullet(
+							Player->TransInfo.Position.x,
+							Player->TransInfo.Position.y);
+						++BulletCount;
+						break;
+					}
+				}
+	
 			OnDrawText(Player->Info.Texture,
 				Player->TransInfo.Position.x,
 				Player->TransInfo.Position.y,
@@ -188,93 +141,24 @@ int main(void)
 				Enemy->TransInfo.Position.y,
 				12);
 
+			for (int i = 0; i < 128; ++i)
+			{
+				if (Bullet[i])
+				{
+					OnDrawText(Bullet[i]->Info.Texture,
+						Bullet[i]->TransInfo.Position.x+=2,
+						Bullet[i]->TransInfo.Position.y,
+						14);
+				}
+			}
+
+			OnDrawText((char*)"Bullet Count : ", 95, 1);
+			OnDrawText(BulletCount, 95+strlen("Bullet Count : "), 1);
+
 			OnDrawText((char*)"Score : ", 60 - strlen("Score : "), 1);
 			OnDrawText(++Score, 60, 1);
 		}
 	}
 
 	return 0;
-}
-// ** 함수 정의부
-
-
-void Initialize(Object* _Object, char* _Texture, int _PosX, int _PosY, int _PosZ)
-{
-	// ** 3항 연상자. 
-	// ** _Name 의 값이 nullptr 이라면  SetName() 함수를 실행하고 아니라면,
-	// ** _Name의 값을 그대로 대입한다.
-	_Object->Info.Texture = (_Texture == nullptr) ? SetName() : _Texture;
-
-	// ** 이동속도 
-	_Object->Speed = 0;
-
-	// ** 좌표값
-	_Object->TransInfo.Position = Vector3(_PosX, _PosY, _PosZ);
-
-	// ** 회전값 (현재 사용되지 않음.)
-	_Object->TransInfo.Rotation = Vector3(0, 0, 0);
-
-	// ** 크기값
-	_Object->TransInfo.Scale = Vector3(0, 0, 0);
-}
-
-char* SetName()
-{
-	// ** 문자열을 입력 받을 임시 변수를 배열로 생성한다. (포인터 변수에는 바로 입력받을수 없음.)
-	char Buffer[128] = "";
-
-	// ** 이름 입력
-	cout << "입력 : "; cin >> Buffer;
-
-	// ** 포인터 변수을 선언하여 입력받은 문자열의 길이만큼 크기를 할당함.
-	//char* pName = (char*)malloc(strlen(Buffer) + 1);
-	char* pName = new char[strlen(Buffer) + 1];
-
-	// ** 입력받은 문자열의 내용을 복사함.
-	strcpy(pName, Buffer);
-
-	// ** 반환
-	return pName;
-}
-
-void SetCursorPosition(int _x, int _y)
-{
-	COORD Pos = { (SHORT)_x, (SHORT)_y };
-
-	SetConsoleCursorPosition(
-		GetStdHandle(STD_OUTPUT_HANDLE), Pos);
-}
-
-void SetTextColor(int _Color)
-{
-	SetConsoleTextAttribute(
-		GetStdHandle(STD_OUTPUT_HANDLE), _Color);
-}
-
-void OnDrawText(char* _str, int _x, int _y, int _Color)
-{
-	SetCursorPosition(_x, _y);
-	SetTextColor(_Color);
-	cout << _str;
-}
-
-void OnDrawText(int _Value, int _x, int _y, int _Color)
-{
-	SetCursorPosition(_x, _y);
-	SetTextColor(_Color);
-
-	char* pText = new char[4];
-	_itoa(_Value, pText, 10);
-	cout << _Value;
-}
-
-void HideCursor(bool _Visible)
-{
-	CONSOLE_CURSOR_INFO CursorInfo;
-
-	CursorInfo.bVisible = _Visible;
-	CursorInfo.dwSize = 1;
-
-	SetConsoleCursorInfo(
-		GetStdHandle(STD_OUTPUT_HANDLE), &CursorInfo);
 }
