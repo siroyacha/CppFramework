@@ -1,34 +1,35 @@
 #pragma once
 
 // ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
-void Initialize(Object* _Object, char* _Texture, int _PosX = 0, int _PosY = 0, int _PosZ = 0);
+void Initialize(Object* _Object, char* _Texture, float _PosX = 0, float _PosY = 0, float _PosZ = 0);
 
 // ** 이름을 셋팅하는 함수
 char* SetName();
 
 // ** 커서의 위치를 변경
-void SetCursorPosition(const int _x, const int _y);
+void SetCursorPosition(const float _x, const float _y);
 
 // ** Text의 색을 변경함.
 void SetTextColor(const int _Color);
 
 // ** 출력할 Text의 위치와 색상을 변경해준다. [Color 값은 기본값 : 흰색(15)]
-void OnDrawText(const char* _str, const int _x, const int _y, const int _Color = 15);
+void OnDrawText(const char* _str, const float _x, const float _y, const int _Color = 15);
 
 // ** 출력할 숫자의 위치와 색상을 변경해준다. [Color 값은 기본값 : 흰색(15)]
-void OnDrawText(const int _Value, const int _x, const int _y, const int _Color = 15);
+void OnDrawText(const int _Value, const float _x, const float _y, const int _Color = 15);
 
 // ** 커서를 보이거나(true) / 안보이게(false) 만들어줌.
 void HideCursor(const bool _Visible);
 
 // ** 충돌처리를 함.
-void Collision(const Object* _ObjectA, const Object* _ObjectB);
+bool Collision(const Object* _ObjectA, const Object* _ObjectB);
 
-Object* CreatBullet(const int _x, const int _y);
+Object* CreatBullet(const float _x, const float _y);
 
+Object* CreatEnemy(const float _x, const float _y);
 
 // ** 함수 선언부
-void Initialize(Object* _Object, char* _Texture, int _PosX, int _PosY, int _PosZ)
+void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float _PosZ)
 {
 	// ** 3항 연상자. 
 	// ** _Name 의 값이 nullptr 이라면  SetName() 함수를 실행하고 아니라면,
@@ -67,7 +68,7 @@ char* SetName()
 	return pName;
 }
 
-void SetCursorPosition(const int _x, const int _y)
+void SetCursorPosition(const float _x, const float _y)
 {
 	COORD Pos = { (SHORT)_x, (SHORT)_y };
 
@@ -81,14 +82,14 @@ void SetTextColor(const int _Color)
 		GetStdHandle(STD_OUTPUT_HANDLE), _Color);
 }
 
-void OnDrawText(const char* _str, const int _x, const int _y, const int _Color)
+void OnDrawText(const char* _str, const float _x, const float _y, const int _Color)
 {
 	SetCursorPosition(_x, _y);
 	SetTextColor(_Color);
 	cout << _str;
 }
 
-void OnDrawText(const int _Value, const int _x, const int _y, const int _Color)
+void OnDrawText(const int _Value, const float _x, const float _y, const int _Color)
 {
 	SetCursorPosition(_x, _y);
 	SetTextColor(_Color);
@@ -109,18 +110,28 @@ void HideCursor(const bool _Visible)
 		GetStdHandle(STD_OUTPUT_HANDLE), &CursorInfo);
 }
 
-void Collision(const Object* _ObjectA, const Object* _ObjectB)
+bool Collision(const Object* _ObjectA, const Object* _ObjectB)
 {
 	if ((_ObjectA->TransInfo.Position.x + _ObjectA->TransInfo.Scale.x) > _ObjectB->TransInfo.Position.x &&
 		(_ObjectB->TransInfo.Position.x + _ObjectB->TransInfo.Scale.x) > _ObjectA->TransInfo.Position.x &&
 		_ObjectA->TransInfo.Position.y == _ObjectB->TransInfo.Position.y)
-		OnDrawText((char*)"충돌입니다", 55, 0, 14);
+		return true;
+	return false;
 }
 
-Object* CreatBullet(const int _x, const int _y)
+Object* CreatBullet(const float _x, const float _y)
 {
 	Object* pBullet = new Object;
 	Initialize(pBullet, (char*)"장풍!", _x + 2, _y);
 
 	return pBullet;
 }
+
+Object* CreatEnemy(const float _x, const float _y)
+{
+	Object* _Object = new Object;
+	Initialize(_Object, (char*)"훗", _x, _y);
+
+	return _Object;
+}
+
