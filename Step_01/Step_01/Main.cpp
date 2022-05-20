@@ -86,11 +86,14 @@ int main(void)
 				BackGround[i].Info.Color = rand() % 8 + 1;
 			}
 
+
 			for (int i = 0; i < 128; ++i)
 			{
-				if (Bullet[i]!=nullptr)
+				if (Bullet[i] != nullptr)
 				{
-					if ((Bullet[i]->TransInfo.Position.x+Bullet[i]->TransInfo.Scale.x)>=120)
+					Collision(Bullet[i], Enemy);
+					if ((Bullet[i]->TransInfo.Position.x + Bullet[i]->TransInfo.Scale.x) >= Enemy->TransInfo.Position.x &&
+						Bullet[i]->TransInfo.Position.y==Enemy->TransInfo.Position.y)
 					{
 						delete Bullet[i];
 						Bullet[i] = nullptr;
@@ -99,6 +102,32 @@ int main(void)
 					}
 				}
 			}
+
+			for (int i = 0; i < 128; ++i)
+			{
+				if (Bullet[i]!=nullptr)
+				{
+					// 위에는 되는데 안에 넣으면 안됨
+					/*
+					if ((Bullet[i]->TransInfo.Position.x + Bullet[i]->TransInfo.Scale.x) == Enemy->TransInfo.Position.x)
+					{
+						delete Bullet[i];
+						Bullet[i] = nullptr;
+
+						--BulletCount;
+					}
+					*/
+
+					if ((Bullet[i]->TransInfo.Position.x + Bullet[i]->TransInfo.Scale.x) >= 120)
+					{
+						delete Bullet[i];
+						Bullet[i] = nullptr;
+
+						--BulletCount;
+					}
+				}
+			}
+
 
 			// ** [상] 키를 입력받음.
 			if (GetAsyncKeyState(VK_UP))
