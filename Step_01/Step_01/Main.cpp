@@ -1,4 +1,4 @@
-// ** Framework v0.5.3
+// ** Framework v0.6.3
 #include"Headers.h"
 
 
@@ -8,11 +8,8 @@ int main(void)
 	// ** 커서를 안보이게 만들어줌.
 	HideCursor(false);
 
-
 	// ** 배경 초기화.
-
 	DrawTextInfo BackGround[30];
-
 
 	for (int i = 0; i < 30; ++i)
 	{
@@ -22,14 +19,13 @@ int main(void)
 		// ** i의 값을 곱하고 더해줌으로써 같은 값이 나오지 않도록 해줌.
 		srand((GetTickCount() + i * i) * GetTickCount());
 
-
 		// ** 현재 어떻게 사용할지 정하지 않았지만, 추후 배경과 총알을 구분지어 플레이어가 배경과 다았을때에는 충돌하지 않고,
 		// ** 총알과 다았을 때에만 충돌판정이 되도록 설정해줄 것임.
 		BackGround[i].Info.Option = 0;
 
 		// ** 좌표를 랜덤으로 설정함.
-		BackGround[i].TransInfo.Position.x = rand() % 100 + 10;
-		BackGround[i].TransInfo.Position.y = rand() % 26 + 1;
+		BackGround[i].TransInfo.Position.x = float(rand() % 100 + 10);
+		BackGround[i].TransInfo.Position.y = float(rand() % 26 + 1);
 
 		// ** 배경으로 사용될 텍스처를 설정.
 		BackGround[i].Info.Texture = (char*)"*";
@@ -37,7 +33,6 @@ int main(void)
 		// ** 배경으로 사용될 텍스처의 색상을 랜덤으로 설정.
 		BackGround[i].Info.Color = rand() % 8 + 1;
 	}
-
 
 	// ** 플레이어 선언 및 동적할당.
 	Object* Player = new Object;
@@ -47,14 +42,12 @@ int main(void)
 
 	// ** Enemy선언 및 동적할당.
 	Object* Enemy[32];	// = new Object;
-
-	
+		
 	for (int i = 0; i < 32; ++i)
 	{
 		Enemy[i] = nullptr;
 	}
 	
-
 	// ** 현재 시간으로 초기화.
 	ULONGLONG Time = GetTickCount64();
 	ULONGLONG EnemyTime = GetTickCount64();
@@ -65,11 +58,15 @@ int main(void)
 	Object* Bullet[128] = { nullptr };
 	Object* EnemyBullet[128] = { nullptr };
 
-	Object* Temp = new Object;
-	Temp->TransInfo.Position.x = 80;
-	Temp->TransInfo.Position.y = 10;
+	Object* Temp[128] = { nullptr };
 
-	Temp->Info.Texture = (char*)"★";
+	Vector3 Direction;
+
+	bool Check = false;
+
+	int Power = 0;
+	
+	int test = 0;
 
 	// ** 출력
 	while (true)
@@ -107,7 +104,7 @@ int main(void)
 					{
 						srand((GetTickCount() + i * i) * GetTickCount());
 
-						Enemy[i] = CreatEnemy(115, rand()%30);
+						Enemy[i] = CreatEnemy(115.0f, float(rand()%30));
 
 						break;
 					}
@@ -156,19 +153,61 @@ int main(void)
 					}
 
 					if (EnemyBullet[i] != nullptr)
-						if ((EnemyBullet[i]->TransInfo.Position.x + EnemyBullet[i]->TransInfo.Scale.x) <= 0)
+						if (EnemyBullet[i]->TransInfo.Position.x <= 0)
 						{
 							delete EnemyBullet[i];
 							EnemyBullet[i] = nullptr;
 						}
-
 				}
 			}
 
 			// ** 키 입력
 			UpdateInput(Player);
 
+			if (!Check && GetAsyncKeyState(VK_SPACE) & 0x0001)
+			{
+				Power = 0;
+				test++;
+				Check = true;
+			}
+
+			// ** 버튼을 누르고 있을때
+			if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+			{
+				if (Power < 10)
+				{
+					Power++;
+				}
+
+			}
+
+
+			// ** 버튼을 누르지 않은 상태.
+			if (Check && !(GetAsyncKeyState(VK_SPACE) & 0x8000))
+			{
+				Temp[test] = new Object;
+
+				Temp[test]->TransInfo.Position.x = 0.0f;
+				Temp[test]->TransInfo.Position.y = float(rand() % 30);
+
+				Temp[test]->Info.Texture = (char*)"★";
+
+				Temp[test]->Speed = Power;
+				// ** Temp가 Player로 이동하기 위해 방향을 받아옴.
+				Direction = GetDirection(Player, Temp[test]);
+			
+				Check = false;
+			}
+			OnDrawText((char*)"[          ]", 1.0f, 28.0f);
+
+			for (int i = 0; i < Power; ++i)
+			{
+				OnDrawText((char*)"/", 2.0f + i, 28.0f);
+			}
+
+			/*
 			if (GetAsyncKeyState(VK_SPACE))
+			{
 				for (int i = 0; i < 128; ++i)
 				{
 					if (Bullet[i] == nullptr)
@@ -179,30 +218,40 @@ int main(void)
 						break;
 					}
 				}
+			}
+			*/
 
 			OnDrawText(Player->Info.Texture,
 				Player->TransInfo.Position.x,
 				Player->TransInfo.Position.y,
 				10);
 
-			OnDrawText(Temp->Info.Texture,
-				Temp->TransInfo.Position.x,
-				Temp->TransInfo.Position.y,
-				12);
+			for (int i = 0; i < 128; i++)
+			{
+				// ** Temp 출력
+				if (Temp[i])
+				{
+					OnDrawText(Temp[i]->Info.Texture,
+						Temp[i]->TransInfo.Position.x,
+						Temp[i]->TransInfo.Position.y,
+						12);
 
-			float x = Player->TransInfo.Position.x - Temp->TransInfo.Position.x;
-			float y = Player->TransInfo.Position.y - Temp->TransInfo.Position.y;
+					// ** 해당 방향으로 이동함.
+					Temp[i]->TransInfo.Position.x += 1 * Temp[i]->Speed;
+					//Temp->TransInfo.Position.y += Direction.y * Temp->Speed;
 
-			float Length = sqrt((x * x) + (y * y));
+					// ** 거리를 출력.
+					OnDrawText((char*)"Length : ", float(60 - strlen("Score : ")), 2.0f);
+					OnDrawText((int)GetDistance(Player, Temp[i]), 60.0f, 2.0f);
 
-			Vector3 Direction = Vector3(x / Length, y / Length);
-
-			Temp->TransInfo.Position.x += Direction.x;
-			Temp->TransInfo.Position.y += Direction.y;
-
-			OnDrawText((char*)"Length : ", 60 - strlen("Score : "), 2.0f);
-			OnDrawText(Length, 60.0f, 2.0f);
-
+					if (Temp[i]->TransInfo.Position.x >= 118)
+					{
+						delete Temp[i];
+						Temp[i] = nullptr;
+					}
+				}
+			}
+			/*
 			for (int i = 0; i < 32; ++i)
 			{
 				if (Enemy[i])
@@ -219,10 +268,10 @@ int main(void)
 						delete Enemy[i];
 						Enemy[i] = nullptr;
 					}
-					
+
 					if (EnemyBulletTime < GetTickCount64())
 					{
-						EnemyBulletTime = GetTickCount64() + (((rand() % 15)+3) * 100);
+						EnemyBulletTime = GetTickCount64() + (((rand() % 15) + 3) * 100);
 
 						for (int j = 0; j < 128; ++j)
 						{
@@ -230,14 +279,14 @@ int main(void)
 							{
 								EnemyBullet[j] = CreatBullet(
 									Enemy[i]->TransInfo.Position.x -= 2,
-									Enemy[i]->TransInfo.Position.y);
+									Enemy[i]->TransInfo.Position.y);							
 								break;
 							}
-
 						}
-					}				
+					}					
 				}
 			}
+			*/
 
 			for (int i = 0; i < 128; ++i)
 			{
@@ -260,11 +309,11 @@ int main(void)
 						EnemyBullet[i]->TransInfo.Position.y);
 				}
 			}
-			
-			
 
 			OnDrawText((char*)"Score : ", float(60 - strlen("Score : ")), 1.0f);
 			OnDrawText(++Score, 60.0f, 1.0f);
+			OnDrawText(test, 60.0f, 3.0f);
+
 		}
 	}
 

@@ -1,7 +1,7 @@
 #pragma once
 
 // ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
-void Initialize(Object* _Object, char* _Texture, float _PosX = 0, float _PosY = 0, float _PosZ = 0);
+void Initialize(Object* _Object, char* _Texture, float _PosX = 0.0f, float _PosY = 0.0f, float _PosZ = 0.0f);
 
 // ** 이름을 셋팅하는 함수
 char* SetName();
@@ -31,6 +31,11 @@ Object* CreatEnemy(const float _x, const float _y);
 // ** 키입력 
 void UpdateInput(Object* _Object);
 
+// ** 거리를 구하는 함수
+float GetDistance(const Object* _ObjectA, const Object* _ObjectB);
+
+// ** 방향을 구하는 함수
+Vector3 GetDirection(const Object* _ObjectA, const Object* _ObjectB);
 
 // ** 함수 선언부
 void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float _PosZ)
@@ -50,7 +55,7 @@ void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float
 	_Object->TransInfo.Rotation = Vector3(0, 0, 0);
 
 	// ** 크기값
-	_Object->TransInfo.Scale = Vector3(strlen(_Object->Info.Texture), 1, 0);
+	_Object->TransInfo.Scale = Vector3(float(strlen(_Object->Info.Texture)), 1, 0);
 }
 
 char* SetName()
@@ -156,4 +161,22 @@ void UpdateInput(Object* _Object)
 	// ** [우] 키를 입력받음.
 	if (GetAsyncKeyState(VK_RIGHT))
 		_Object->TransInfo.Position.x += 1;
+}
+
+float GetDistance(const Object* _ObjectA, const Object* _ObjectB)
+{
+	float x = _ObjectA->TransInfo.Position.x - _ObjectB->TransInfo.Position.x;
+	float y = _ObjectA->TransInfo.Position.y - _ObjectB->TransInfo.Position.y;
+
+	return  sqrt((x * x) + (y * y));
+}
+
+Vector3 GetDirection(const Object* _ObjectA, const Object* _ObjectB)
+{
+	float x = _ObjectA->TransInfo.Position.x - _ObjectB->TransInfo.Position.x;
+	float y = _ObjectA->TransInfo.Position.y - _ObjectB->TransInfo.Position.y;
+
+	float Distance = sqrt((x * x) + (y * y));
+
+	return Vector3(x / Distance, y / Distance);
 }
