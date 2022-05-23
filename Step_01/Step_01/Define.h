@@ -28,6 +28,10 @@ Object* CreatBullet(const float _x, const float _y);
 
 Object* CreatEnemy(const float _x, const float _y);
 
+// ** 키입력 
+void UpdateInput(Object* _Object);
+
+
 // ** 함수 선언부
 void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float _PosZ)
 {
@@ -135,3 +139,21 @@ Object* CreatEnemy(const float _x, const float _y)
 	return _Object;
 }
 
+void UpdateInput(Object* _Object)
+{
+	// ** [상] 키를 입력받음.
+	if (GetAsyncKeyState(VK_UP))
+		_Object->TransInfo.Position.y -= 1;
+
+	// ** [하] 키를 입력받음.
+	if (GetAsyncKeyState(VK_DOWN))
+		_Object->TransInfo.Position.y += 1;
+
+	// ** [좌] 키를 입력받음.
+	if (GetAsyncKeyState(VK_LEFT))
+		_Object->TransInfo.Position.x -= 1;
+
+	// ** [우] 키를 입력받음.
+	if (GetAsyncKeyState(VK_RIGHT))
+		_Object->TransInfo.Position.x += 1;
+}

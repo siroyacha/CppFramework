@@ -1,7 +1,6 @@
 // ** Framework v0.5.3
 #include"Headers.h"
 
-// ** 몬스터와 투사체가 충돌하는거 만들기
 
 // ** 진입점.	
 int main(void)
@@ -49,13 +48,8 @@ int main(void)
 	// ** Enemy선언 및 동적할당.
 	Object* Enemy[32];	// = new Object;
 
-	// ** Enemy 초기화
-	Enemy[0] = new Object;
-	Initialize(Enemy[0], (char*)"홋", 80, 10);
-	/**/
-
 	
-	for (int i = 1; i < 32; ++i)
+	for (int i = 0; i < 32; ++i)
 	{
 		Enemy[i] = nullptr;
 	}
@@ -130,8 +124,6 @@ int main(void)
 						{
 							if (Collision(Enemy[j], Bullet[i]))
 							{
-								OnDrawText((char*)"충돌입니다!!", 55, 0, 10);
-
 								delete Enemy[j];
 								Enemy[j] = nullptr;
 
@@ -172,26 +164,9 @@ int main(void)
 
 				}
 			}
-			/*
-			if (Collision(Player, Enemy))
-				OnDrawText((char*)"충돌입니다!!", 55, 0, 10);
-			*/
 
-			// ** [상] 키를 입력받음.
-			if (GetAsyncKeyState(VK_UP))
-				Player->TransInfo.Position.y -= 1;
-
-			// ** [하] 키를 입력받음.
-			if (GetAsyncKeyState(VK_DOWN))
-				Player->TransInfo.Position.y += 1;
-
-			// ** [좌] 키를 입력받음.
-			if (GetAsyncKeyState(VK_LEFT))
-				Player->TransInfo.Position.x -= 1;
-
-			// ** [우] 키를 입력받음.
-			if (GetAsyncKeyState(VK_RIGHT))
-				Player->TransInfo.Position.x += 1;
+			// ** 키 입력
+			UpdateInput(Player);
 
 			if (GetAsyncKeyState(VK_SPACE))
 				for (int i = 0; i < 128; ++i)
@@ -213,20 +188,20 @@ int main(void)
 			OnDrawText(Temp->Info.Texture,
 				Temp->TransInfo.Position.x,
 				Temp->TransInfo.Position.y,
-				11);
+				12);
 
 			float x = Player->TransInfo.Position.x - Temp->TransInfo.Position.x;
 			float y = Player->TransInfo.Position.y - Temp->TransInfo.Position.y;
 
 			float Length = sqrt((x * x) + (y * y));
 
-			OnDrawText((char*)"Length : ", 60 - strlen("Score : "), 2);
-			OnDrawText(Length, 60, 2);
-
 			Vector3 Direction = Vector3(x / Length, y / Length);
 
 			Temp->TransInfo.Position.x += Direction.x;
 			Temp->TransInfo.Position.y += Direction.y;
+
+			OnDrawText((char*)"Length : ", 60 - strlen("Score : "), 2.0f);
+			OnDrawText(Length, 60.0f, 2.0f);
 
 			for (int i = 0; i < 32; ++i)
 			{
@@ -288,8 +263,8 @@ int main(void)
 			
 			
 
-			OnDrawText((char*)"Score : ", 60 - strlen("Score : "), 1);
-			OnDrawText(++Score, 60, 1);
+			OnDrawText((char*)"Score : ", float(60 - strlen("Score : ")), 1.0f);
+			OnDrawText(++Score, 60.0f, 1.0f);
 		}
 	}
 
