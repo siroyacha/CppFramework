@@ -1,12 +1,15 @@
-// ** Framework v0.6.3
+// ** Framework v0.7.0
 #include"Headers.h"
 
+// ** 충돌, 거리 구하기 필수로 넣기
 
 // ** 진입점.	
 int main(void)
 {
 	// ** 커서를 안보이게 만들어줌.
 	HideCursor(false);
+
+	system("mode con:cols=100 lines=60");
 
 	// ** 배경 초기화.
 	DrawTextInfo BackGround[30];
@@ -25,7 +28,7 @@ int main(void)
 
 		// ** 좌표를 랜덤으로 설정함.
 		BackGround[i].TransInfo.Position.x = float(rand() % 100 + 10);
-		BackGround[i].TransInfo.Position.y = float(rand() % 26 + 1);
+		BackGround[i].TransInfo.Position.y = float(rand() % 50 + 1);
 
 		// ** 배경으로 사용될 텍스처를 설정.
 		BackGround[i].Info.Texture = (char*)"*";
@@ -38,16 +41,14 @@ int main(void)
 	Object* Player = new Object;
 
 	// ** 플레이어 초기화
-	Initialize(Player, (char*)"옷/", 30, 10);
+	Initialize(Player, (char*)"옷/", 50, 50);
 
 	// ** Enemy선언 및 동적할당.
 	Object* Enemy[32];	// = new Object;
 		
 	for (int i = 0; i < 32; ++i)
-	{
 		Enemy[i] = nullptr;
-	}
-	
+		
 	// ** 현재 시간으로 초기화.
 	ULONGLONG Time = GetTickCount64();
 	ULONGLONG EnemyTime = GetTickCount64();
@@ -61,15 +62,18 @@ int main(void)
 	Object* Temp[128] = { nullptr };
 
 	Vector3 Direction;
+	Vector3 Direction2;
 
 	bool Check = false;
 
 	int Power = 0;
 	
 	int test = 0;
+	int Playerdietest=1;
+	int k = 0;
 
 	// ** 출력
-	while (true)
+	while (Playerdietest)
 	{
 		// ** 초기화된 시간으로부터 +50 만큼 증가하면...
 		// ** (프레임과 프레임사이의 시간 간격을 0.5초로 셋팅)
@@ -104,9 +108,26 @@ int main(void)
 					{
 						srand((GetTickCount() + i * i) * GetTickCount());
 
-						Enemy[i] = CreatEnemy(115.0f, float(rand()%30));
+						Enemy[i] = CreatEnemy(float(rand() % 100), 1.0f);
 
 						break;
+					}
+					if (EnemyBulletTime < GetTickCount64())
+					{
+						EnemyBulletTime = GetTickCount64() + (((rand() % 15) + 3) * 100);
+
+						Direction2 = GetDirection(Player, Enemy[k]);
+						for (int j = 0; j < 128; ++j)
+						{
+							k = i % 32;
+							if (EnemyBullet[j] == nullptr)
+							{
+								EnemyBullet[j] = CreatBullet(
+									Enemy[k]->TransInfo.Position.x,
+									Enemy[k]->TransInfo.Position.y);
+								break;							
+							}
+						}
 					}
 				}
 			}			
@@ -132,7 +153,7 @@ int main(void)
 						}
 					}
 					if (Bullet[i] != nullptr)
-						if ((Bullet[i]->TransInfo.Position.x + Bullet[i]->TransInfo.Scale.x) >= 120)
+						if (Bullet[i]->TransInfo.Position.y < 0)
 						{
 							delete Bullet[i];
 							Bullet[i] = nullptr;
@@ -141,19 +162,18 @@ int main(void)
 				if (EnemyBullet[i]!=nullptr)
 				{
 					if (Collision(EnemyBullet[i],Player))
-					{
-						/*
-						delete Player;
-						Player = nullptr;
-						*/
+					{					
+						//Playerdietest = 0;
 						
 						delete EnemyBullet[i];
 						EnemyBullet[i] = nullptr;
 						break;
+						
 					}
 
 					if (EnemyBullet[i] != nullptr)
-						if (EnemyBullet[i]->TransInfo.Position.x <= 0)
+						if (EnemyBullet[i]->TransInfo.Position.y >= 50 || EnemyBullet[i]->TransInfo.Position.y <= 0 ||
+							EnemyBullet[i]->TransInfo.Position.x >= 98 || EnemyBullet[i]->TransInfo.Position.x < 0)
 						{
 							delete EnemyBullet[i];
 							EnemyBullet[i] = nullptr;
@@ -163,7 +183,7 @@ int main(void)
 
 			// ** 키 입력
 			UpdateInput(Player);
-
+			/*
 			if (!Check && GetAsyncKeyState(VK_SPACE) & 0x0001)
 			{
 				Power = 0;
@@ -187,17 +207,19 @@ int main(void)
 			{
 				Temp[test] = new Object;
 
-				Temp[test]->TransInfo.Position.x = 0.0f;
-				Temp[test]->TransInfo.Position.y = float(rand() % 30);
+				Temp[test]->TransInfo.Position.x = float(rand() % 100);
+				Temp[test]->TransInfo.Position.y = 1;
 
 				Temp[test]->Info.Texture = (char*)"★";
 
 				Temp[test]->Speed = Power;
+				
 				// ** Temp가 Player로 이동하기 위해 방향을 받아옴.
 				Direction = GetDirection(Player, Temp[test]);
 			
 				Check = false;
 			}
+			*/
 			OnDrawText((char*)"[          ]", 1.0f, 28.0f);
 
 			for (int i = 0; i < Power; ++i)
@@ -205,7 +227,7 @@ int main(void)
 				OnDrawText((char*)"/", 2.0f + i, 28.0f);
 			}
 
-			/*
+			
 			if (GetAsyncKeyState(VK_SPACE))
 			{
 				for (int i = 0; i < 128; ++i)
@@ -214,12 +236,12 @@ int main(void)
 					{
 						Bullet[i] = CreatBullet(
 							Player->TransInfo.Position.x,
-							Player->TransInfo.Position.y);
+							Player->TransInfo.Position.y-1);
 						break;
 					}
 				}
 			}
-			*/
+			
 
 			OnDrawText(Player->Info.Texture,
 				Player->TransInfo.Position.x,
@@ -237,62 +259,48 @@ int main(void)
 						12);
 
 					// ** 해당 방향으로 이동함.
-					Temp[i]->TransInfo.Position.x += 1 * Temp[i]->Speed;
-					//Temp->TransInfo.Position.y += Direction.y * Temp->Speed;
+					Temp[i]->TransInfo.Position.x += Direction.x * Temp[i]->Speed;
+					Temp[i]->TransInfo.Position.y += Direction.y * Temp[i]->Speed;
 
 					// ** 거리를 출력.
 					OnDrawText((char*)"Length : ", float(60 - strlen("Score : ")), 2.0f);
 					OnDrawText((int)GetDistance(Player, Temp[i]), 60.0f, 2.0f);
 
-					if (Temp[i]->TransInfo.Position.x >= 118)
+					if (Temp[i]->TransInfo.Position.y >= 50)
 					{
+						--test;
 						delete Temp[i];
 						Temp[i] = nullptr;
 					}
 				}
 			}
-			/*
+			
 			for (int i = 0; i < 32; ++i)
 			{
 				if (Enemy[i])
 				{
-					Enemy[i]->TransInfo.Position.x--;
-
 					OnDrawText(Enemy[i]->Info.Texture,
 						Enemy[i]->TransInfo.Position.x,
 						Enemy[i]->TransInfo.Position.y,
 						12);
 
-					if (Enemy[i]->TransInfo.Position.x <= 0)
+					Enemy[i]->TransInfo.Position.y += 0.5f;
+
+					if (Enemy[i]->TransInfo.Position.y >= 50)
 					{
 						delete Enemy[i];
 						Enemy[i] = nullptr;
 					}
 
-					if (EnemyBulletTime < GetTickCount64())
-					{
-						EnemyBulletTime = GetTickCount64() + (((rand() % 15) + 3) * 100);
-
-						for (int j = 0; j < 128; ++j)
-						{
-							if (EnemyBullet[j] == nullptr)
-							{
-								EnemyBullet[j] = CreatBullet(
-									Enemy[i]->TransInfo.Position.x -= 2,
-									Enemy[i]->TransInfo.Position.y);							
-								break;
-							}
-						}
-					}					
 				}
 			}
-			*/
+			
 
 			for (int i = 0; i < 128; ++i)
 			{
 				if (Bullet[i])
 				{
-					Bullet[i]->TransInfo.Position.x += 2;
+					Bullet[i]->TransInfo.Position.y -= 2;
 					OnDrawText(Bullet[i]->Info.Texture,
 						Bullet[i]->TransInfo.Position.x,
 						Bullet[i]->TransInfo.Position.y);
@@ -303,18 +311,19 @@ int main(void)
 			{
 				if (EnemyBullet[i])
 				{
-					EnemyBullet[i]->TransInfo.Position.x -= 2;
 					OnDrawText(EnemyBullet[i]->Info.Texture,
 						EnemyBullet[i]->TransInfo.Position.x,
 						EnemyBullet[i]->TransInfo.Position.y);
+
+					EnemyBullet[i]->TransInfo.Position.x += Direction2.x * 2.0f;
+					EnemyBullet[i]->TransInfo.Position.y += Direction2.y * 1.5f;
+
 				}
 			}
 
 			OnDrawText((char*)"Score : ", float(60 - strlen("Score : ")), 1.0f);
 			OnDrawText(++Score, 60.0f, 1.0f);
-			OnDrawText(test, 60.0f, 3.0f);
-
-		}
+			}
 	}
 
 	return 0;

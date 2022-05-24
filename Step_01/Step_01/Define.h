@@ -123,7 +123,8 @@ bool Collision(const Object* _ObjectA, const Object* _ObjectB)
 {
 	if ((_ObjectA->TransInfo.Position.x + _ObjectA->TransInfo.Scale.x) > _ObjectB->TransInfo.Position.x &&
 		(_ObjectB->TransInfo.Position.x + _ObjectB->TransInfo.Scale.x) > _ObjectA->TransInfo.Position.x &&
-		_ObjectA->TransInfo.Position.y == _ObjectB->TransInfo.Position.y)
+		(_ObjectA->TransInfo.Position.y + _ObjectA->TransInfo.Scale.y) > _ObjectB->TransInfo.Position.y &&
+		(_ObjectB->TransInfo.Position.y + _ObjectB->TransInfo.Scale.y) > _ObjectA->TransInfo.Position.y)
 		return true;
 	return false;
 }
@@ -131,7 +132,7 @@ bool Collision(const Object* _ObjectA, const Object* _ObjectB)
 Object* CreatBullet(const float _x, const float _y)
 {
 	Object* pBullet = new Object;
-	Initialize(pBullet, (char*)"¿Â«≥!", _x + 2, _y);
+	Initialize(pBullet, (char*)"°ÿ", _x, _y);
 
 	return pBullet;
 }
