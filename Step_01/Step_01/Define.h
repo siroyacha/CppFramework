@@ -56,6 +56,8 @@ void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float
 
 	// ** ũ�Ⱚ
 	_Object->TransInfo.Scale = Vector3(float(strlen(_Object->Info.Texture)), 1, 0);
+
+	_Object->Time = GetTickCount64();
 }
 
 char* SetName()

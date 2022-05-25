@@ -35,6 +35,8 @@ struct Object
 	char* Name;
 	int Speed;
 
+	ULONGLONG Time;
+
 	Information Info;
 	Trasnsform TransInfo;
 };
