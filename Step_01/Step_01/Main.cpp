@@ -1,9 +1,8 @@
-// ** Framework v0.7.1
+// ** Framework v0.7.2
 #include"Headers.h"
 
 // ** 충돌, 거리 구하기 필수로 넣기
 
-// ** 진입점.	
 int main(void)
 {
 	// ** 커서를 안보이게 만들어줌.
@@ -45,7 +44,8 @@ int main(void)
 
 	// ** Enemy선언 및 동적할당.
 	Object* Enemy[32];	// = new Object;
-	Object* Boss;
+	Object* Boss = new Object;
+	Boss = nullptr;
 
 	for (int i = 0; i < 32; ++i)
 		Enemy[i] = nullptr;
@@ -58,11 +58,13 @@ int main(void)
 	int Score = 0;
 
 	Object* Bullet[128] = { nullptr };
+	Object* BossBullet[128] = { nullptr };
 	Object* EnemyBullet[128] = { nullptr };
 
 	Object* Temp[128] = { nullptr };
 
 	Vector3 EnemyBulletDirection[128];
+	Vector3 BossBulletDirection[128];
 
 	bool Check = false;
 
@@ -70,7 +72,7 @@ int main(void)
 	
 	int test = 0;
 	int Playerdietest=1;
-	int Countdown = 60;
+	int Countdown = 150;
 	// ** 출력
 	while (Playerdietest)
 	{
@@ -107,17 +109,19 @@ int main(void)
 					{
 						srand((GetTickCount() + i * i) * GetTickCount());
 
-						Enemy[i] = CreatEnemy(float(rand() % 100), 1.0f);
+						Enemy[i] = CreatEnemy(float(rand() % 100), 1.0f, 3);
 
 						break;
+					}
+
+					if (Enemy[i]->Time + ((rand() % 15) * 100) < GetTickCount64())
+					{
+						Enemy[i]->Time = GetTickCount64();
 					}
 					for (int j = 0; j < 128; ++j)
 					{
 						if (EnemyBullet[j] == nullptr)
 						{
-							if (Enemy[i]->Time + 2000 < GetTickCount64())
-								Enemy[i]->Time = GetTickCount64();
-
 							EnemyBullet[j] = CreatBullet(
 								Enemy[i]->TransInfo.Position.x,
 								Enemy[i]->TransInfo.Position.y + 1.0f);
@@ -127,7 +131,32 @@ int main(void)
 							break;
 						}
 					}
-					
+				}
+			}
+
+			if (Score >= 5)
+			{
+				Boss = CreatBoss(50.0f, 10.0f, 5.0f, 1.0f);
+			}
+			if (Boss)
+			{
+				if (Boss->Time + (rand() % 7) * 137 < GetTickCount64())
+				{
+					Boss->Time = GetTickCount64();
+
+					for (int i = 0; i < 128; ++i)
+					{
+						if (BossBullet[i] == nullptr)
+						{
+							BossBullet[i] = CreatBullet(
+								Boss->TransInfo.Position.x + (float)(rand() % 6),
+								Boss->TransInfo.Position.y + 2.0f);
+
+							BossBulletDirection[i] = GetDirection(Player, Boss);
+
+							break;
+						}
+					}
 				}
 			}
 
@@ -139,20 +168,36 @@ int main(void)
 					{
 						if (Enemy[j] != nullptr)
 						{
-							if (Collision(Enemy[j], Bullet[i]))
+							if (Collision(Bullet[i], Enemy[j]))
 							{
-								delete Enemy[j];
-								Enemy[j] = nullptr;
-
+								Enemy[j]->Hp = Enemy[j]->Hp - Bullet[i]->Hp;
 								delete Bullet[i];
 								Bullet[i] = nullptr;
 
-								++Score;
+								if (Enemy[j]->Hp <= 0)
+								{
+									delete Enemy[j];
+									Enemy[j] = nullptr;
+
+									++Score;
+								}
 
 								break;
 							}
 						}
 					}
+
+					if (Bullet[i] != nullptr)
+						if (Boss != nullptr)
+						{
+							if (Collision(Boss, Bullet[i]))
+							{
+								delete Bullet[i];
+								Bullet[i] = nullptr;
+								break;
+							}
+						}
+										
 					if (Bullet[i] != nullptr)
 						if (Bullet[i]->TransInfo.Position.y < 0)
 						{
@@ -172,14 +217,34 @@ int main(void)
 						break;
 					}
 
-				if (EnemyBullet[i] != nullptr)
-					if (EnemyBullet[i]->TransInfo.Position.y >= 50 || EnemyBullet[i]->TransInfo.Position.y <= 0 ||
-						EnemyBullet[i]->TransInfo.Position.x >= 98 || EnemyBullet[i]->TransInfo.Position.x < 0)
+					if (EnemyBullet[i] != nullptr)
+						if (EnemyBullet[i]->TransInfo.Position.y >= 50 || EnemyBullet[i]->TransInfo.Position.y <= 0 ||
+							EnemyBullet[i]->TransInfo.Position.x >= 98 || EnemyBullet[i]->TransInfo.Position.x < 0)
+						{
+							delete EnemyBullet[i];
+							EnemyBullet[i] = nullptr;
+						}
+				}
+
+				if (BossBullet[i] != nullptr)
+				{
+					if (Collision(BossBullet[i], Player))
 					{
-						delete EnemyBullet[i];
-						EnemyBullet[i] = nullptr;
+						//Playerdietest = 0;
+
+						delete BossBullet[i];
+						BossBullet[i] = nullptr;
+						break;
 					}
-				}								
+
+					if (BossBullet[i] != nullptr)
+						if (BossBullet[i]->TransInfo.Position.y >= 50 || BossBullet[i]->TransInfo.Position.y <= 0 ||
+							BossBullet[i]->TransInfo.Position.x >= 98 || BossBullet[i]->TransInfo.Position.x < 0)
+						{
+							delete BossBullet[i];
+							BossBullet[i] = nullptr;
+						}
+				}
 			}
 
 			// ** 키 입력
@@ -237,7 +302,7 @@ int main(void)
 					{
 						Bullet[i] = CreatBullet(
 							Player->TransInfo.Position.x,
-							Player->TransInfo.Position.y - 1);
+							Player->TransInfo.Position.y - 1.0f);
 						break;
 					}
 				}
@@ -261,6 +326,15 @@ int main(void)
 					{
 						delete EnemyBullet[i];
 						EnemyBullet[i] = nullptr;
+					}
+				}
+
+				for (int i = 0; i < 128; ++i)
+				{
+					if (BossBullet[i])
+					{
+						delete BossBullet[i];
+						BossBullet[i] = nullptr;
 					}
 				}
 			}
@@ -297,6 +371,18 @@ int main(void)
 				}
 			}
 			*/
+			for (int i = 0; i < 128; ++i)
+			{
+				if (EnemyBullet[i])
+				{
+					OnDrawText(EnemyBullet[i]->Info.Texture,
+						EnemyBullet[i]->TransInfo.Position.x,
+						EnemyBullet[i]->TransInfo.Position.y);
+
+					EnemyBullet[i]->TransInfo.Position.x += EnemyBulletDirection[i].x * 2.0f;
+					EnemyBullet[i]->TransInfo.Position.y += EnemyBulletDirection[i].y * 1.5f;
+				}
+			}
 			
 			for (int i = 0; i < 32; ++i)
 			{
@@ -317,7 +403,27 @@ int main(void)
 
 				}
 			}
-			
+
+			if (Boss)
+			{
+				for (int i = 0; i < 128; ++i)
+				{
+					if (BossBullet[i])
+					{
+						OnDrawText(BossBullet[i]->Info.Texture,
+							BossBullet[i]->TransInfo.Position.x,
+							BossBullet[i]->TransInfo.Position.y);
+
+						BossBullet[i]->TransInfo.Position.x += BossBulletDirection[i].x * 2.0f;
+						BossBullet[i]->TransInfo.Position.y += BossBulletDirection[i].y * 1.5f;
+					}
+				}
+				//OnDrawText(Boss->Info.Hp,float(60-),3.0f)
+				OnDrawText(Boss->Info.Texture, Boss->TransInfo.Position.x - 3.0f, Boss->TransInfo.Position.y, 11);
+				OnDrawText(Boss->Info.Texture, Boss->TransInfo.Position.x - 3.0f, Boss->TransInfo.Position.y + 1.0f, 11);
+				OnDrawText(Boss->Info.Texture, Boss->TransInfo.Position.x - 3.0f, Boss->TransInfo.Position.y + 2.0f, 11);
+				OnDrawText(Boss->Info.Texture, Boss->TransInfo.Position.x - 3.0f, Boss->TransInfo.Position.y + 3.0f, 11);
+			}
 
 			for (int i = 0; i < 128; ++i)
 			{
@@ -330,19 +436,6 @@ int main(void)
 				}
 			}
 			
-			for (int j = 0; j < 128; ++j)
-			{
-				if (EnemyBullet[j])
-				{
-					OnDrawText(EnemyBullet[j]->Info.Texture,
-						EnemyBullet[j]->TransInfo.Position.x,
-						EnemyBullet[j]->TransInfo.Position.y);
-
-					EnemyBullet[j]->TransInfo.Position.x += EnemyBulletDirection[j].x * 2.0f;
-					EnemyBullet[j]->TransInfo.Position.y += EnemyBulletDirection[j].y * 1.5f;
-				}
-			}
-
 			OnDrawText((char*)"남은 시간 : ", float(60 - strlen("남은 시간 : ")), 1.0f);
 			if (CountdownTime + 1000 < GetTickCount64())
 			{

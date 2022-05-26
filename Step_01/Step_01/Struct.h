@@ -34,6 +34,7 @@ struct Object
 {
 	char* Name;
 	int Speed;
+	int Hp;
 
 	ULONGLONG Time;
 

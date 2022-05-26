@@ -1,7 +1,7 @@
 #pragma once
 
 // ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
-void Initialize(Object* _Object, char* _Texture, float _PosX = 0.0f, float _PosY = 0.0f, float _PosZ = 0.0f);
+void Initialize(Object* _Object, char* _Texture, float _PosX = 0.0f, float _PosY = 0.0f, float _PosZ = 0.0f, int Hp = 1);
 
 // ** 이름을 셋팅하는 함수
 char* SetName();
@@ -24,9 +24,9 @@ void HideCursor(const bool _Visible);
 // ** 충돌처리를 함.
 bool Collision(const Object* _ObjectA, const Object* _ObjectB);
 
-Object* CreatBullet(const float _x, const float _y);
+Object* CreatBullet(const float _x, const float _y, const int _hp = 1);
 
-Object* CreatEnemy(const float _x, const float _y);
+Object* CreatEnemy(const float _x, const float _y, const int _hp);
 
 // ** 키입력 
 void UpdateInput(Object* _Object);
@@ -37,8 +37,10 @@ float GetDistance(const Object* _ObjectA, const Object* _ObjectB);
 // ** 방향을 구하는 함수
 Vector3 GetDirection(const Object* _ObjectA, const Object* _ObjectB);
 
+Object* CreatBoss(const float _x, const float _y, const float _xScale, const float _yScale);
+
 // ** 함수 선언부
-void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float _PosZ)
+void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float _PosZ, int _Hp)
 {
 	// ** 3항 연상자. 
 	// ** _Name 의 값이 nullptr 이라면  SetName() 함수를 실행하고 아니라면,
@@ -58,6 +60,8 @@ void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float
 	_Object->TransInfo.Scale = Vector3(float(strlen(_Object->Info.Texture)), 1, 0);
 
 	_Object->Time = GetTickCount64();
+
+	_Object->Hp = _Hp;
 }
 
 char* SetName()
@@ -131,18 +135,18 @@ bool Collision(const Object* _ObjectA, const Object* _ObjectB)
 	return false;
 }
 
-Object* CreatBullet(const float _x, const float _y)
+Object* CreatBullet(const float _x, const float _y, const int _hp)
 {
 	Object* pBullet = new Object;
-	Initialize(pBullet, (char*)"※", _x, _y);
+	Initialize(pBullet, (char*)"※", _x, _y, 0.0f, _hp);
 
 	return pBullet;
 }
 
-Object* CreatEnemy(const float _x, const float _y)
+Object* CreatEnemy(const float _x, const float _y, const int _hp)
 {
 	Object* _Object = new Object;
-	Initialize(_Object, (char*)"훗", _x, _y);
+	Initialize(_Object, (char*)"훗", _x, _y, 0.0f, _hp);
 
 	return _Object;
 }
@@ -182,4 +186,16 @@ Vector3 GetDirection(const Object* _ObjectA, const Object* _ObjectB)
 	float Distance = sqrt((x * x) + (y * y));
 
 	return Vector3(x / Distance, y / Distance);
+}
+
+Object* CreatBoss(const float _x, const float _y, const float _xScale, const float _yScale)
+{
+	Object* _Object = new Object;
+	Initialize(_Object, (char*)"◆◆◆◆◆◆◆", _x, _y);
+	/*
+	_Object->TransInfo.Scale.x = _xScale;
+	_Object->TransInfo.Scale.y = _yScale;
+	*/
+
+	return _Object;
 }
