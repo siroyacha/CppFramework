@@ -35,6 +35,8 @@ struct Object
 	char* Name;
 	int Speed;
 	int Hp;
+	int Boom;
+	int Mode;
 
 	ULONGLONG Time;
 
