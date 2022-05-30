@@ -37,8 +37,9 @@ float GetDistance(const Object* _ObjectA, const Object* _ObjectB);
 // ** ¹æÇâÀ» ±¸ÇÏ´Â ÇÔ¼ö
 Vector3 GetDirection(const Object* _ObjectA, const Object* _ObjectB);
 
-Object* CreatBoss(const float _x, const float _y, const int _hp);
+Object* CreatBoss(const float _x, const float _y, const float _Scale_x, const int _hp);
 
+Object* CreatItem(const float _x, const float _y, const int _mode);
 
 // ** ÇÔ¼ö ¼±¾ðºÎ
 void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float _PosZ, int _Hp, int _Boom, int _Mode)
@@ -134,8 +135,8 @@ bool Collision(const Object* _ObjectA, const Object* _ObjectB)
 {
 	if ((_ObjectA->TransInfo.Position.x + _ObjectA->TransInfo.Scale.x) > _ObjectB->TransInfo.Position.x &&
 		(_ObjectB->TransInfo.Position.x + _ObjectB->TransInfo.Scale.x) > _ObjectA->TransInfo.Position.x &&
-		(_ObjectA->TransInfo.Position.y + _ObjectA->TransInfo.Scale.y) > _ObjectB->TransInfo.Position.y &&
-		(_ObjectB->TransInfo.Position.y + _ObjectB->TransInfo.Scale.y) > _ObjectA->TransInfo.Position.y)
+		(_ObjectA->TransInfo.Position.y + _ObjectA->TransInfo.Scale.y) >= _ObjectB->TransInfo.Position.y &&
+		(_ObjectB->TransInfo.Position.y + _ObjectB->TransInfo.Scale.y) >= _ObjectA->TransInfo.Position.y)
 		return true;
 	return false;
 }
@@ -151,7 +152,7 @@ Object* CreatBullet(const float _x, const float _y, const int _hp)
 Object* CreatEnemy(const float _x, const float _y, const int _hp)
 {
 	Object* _Object = new Object;
-	Initialize(_Object, (char*)"ÈÊ", _x, _y, 0.0f, _hp);
+	Initialize(_Object, (char*)"ÈÊ", _x, _y, 0.0f, _hp, 0, (rand() % 4));
 
 	return _Object;
 }
@@ -193,10 +194,37 @@ Vector3 GetDirection(const Object* _ObjectA, const Object* _ObjectB)
 	return Vector3(x / Distance, y / Distance);
 }
 
-Object* CreatBoss(const float _x, const float _y, const int _hp)
+Object* CreatBoss(const float _x, const float _y, const float _Scale_x, const int _hp)
 {
 	Object* _Object = new Object;
 	Initialize(_Object, (char*)"¡á¡á¡á¡á¡á", _x, _y, 0.0f, _hp);
+	_Object->TransInfo.Scale.x = _Scale_x;
+	_Object->TransInfo.Scale.y = 3;
+
+	return _Object;
+}
+
+Object* CreatItem(const float _x, const float _y, const int _mode)
+{
+	Object* _Object = new Object;
+	
+	switch (_mode)
+	{
+	case 1:
+		Initialize(_Object, (char*)"Boom", _x, _y);
+		break;
+	case 2:
+		Initialize(_Object, (char*)"Power", _x, _y);
+		break;
+	case 3:
+		Initialize(_Object, (char*)"¿Ê/", _x, _y);
+		break;		
+	default:
+		Initialize(_Object, (char*)" ", _x, _y);
+		break;
+	}
+
+	_Object->Time = GetTickCount64();
 
 	return _Object;
 }
