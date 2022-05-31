@@ -105,6 +105,10 @@ void SetTextColor(const int _Color)
 
 void OnDrawText(const char* _str, const float _x, const float _y, const int _Color)
 {
+	/*
+	if (!(_y <= 0 || _y >= 60 || _x <= 0 || _x >= 100))
+	{	}
+	*/
 	SetCursorPosition(_x, _y);
 	SetTextColor(_Color);
 	cout << _str;
@@ -112,6 +116,10 @@ void OnDrawText(const char* _str, const float _x, const float _y, const int _Col
 
 void OnDrawText(const int _Value, const float _x, const float _y, const int _Color)
 {
+	/*
+	if (!(_y <= 0 || _y >= 60 || _x <= 0 || _x >= 100))
+	{	}
+	*/
 	SetCursorPosition(_x, _y);
 	SetTextColor(_Color);
 
@@ -227,4 +235,15 @@ Object* CreatItem(const float _x, const float _y, const int _mode)
 	_Object->Time = GetTickCount64();
 
 	return _Object;
+}
+
+void SceneManager(Object* _Player) 
+{
+	int SecenState = 0;
+
+	switch (SecenState)
+	{
+	case 1:
+		break;
+	}
 }
