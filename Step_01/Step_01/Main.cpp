@@ -1,4 +1,4 @@
-// ** Framework v0.8.1
+// ** Framework v0.8.2
 #include"Headers.h"
 
 // ** 충돌, 거리 구하기 필수로 넣기
@@ -650,10 +650,12 @@ int main(void)
 			}
 		}
 	}
+	delete Player;
+
+	system("mode con:cols=120 lines=30");
 
 	system("cls");
-	OnDrawText((char*)"클리어!!", 50, 30, 10);
-
+	
 
 	return 0;
 }

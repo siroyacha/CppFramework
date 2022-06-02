@@ -1,4 +1,14 @@
 #pragma once
+int SecenState = 0;
+
+const int LogoScene = 1;
+const int MenuScene = 2;
+const int FieldScene = 3;
+const int ShopScene = 4;
+const int MapScene = 5;
+const int BattleScene = 6;
+const int PlayerInfoScene = 7;
+const int ExitScene = 8;
 
 // ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
 void Initialize(Object* _Object, char* _Texture, float _PosX = 0.0f, float _PosY = 0.0f, float _PosZ = 0.0f, int _Hp = 1, int _Boom = 0, int _Mode = 1);
@@ -40,6 +50,8 @@ Vector3 GetDirection(const Object* _ObjectA, const Object* _ObjectB);
 Object* CreatBoss(const float _x, const float _y, const float _Scale_x, const int _hp);
 
 Object* CreatItem(const float _x, const float _y, const int _mode);
+
+void SceneManager(Object* _Player);
 
 // ** 함수 선언부
 void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float _PosZ, int _Hp, int _Boom, int _Mode)
@@ -239,11 +251,94 @@ Object* CreatItem(const float _x, const float _y, const int _mode)
 
 void SceneManager(Object* _Player) 
 {
-	int SecenState = 0;
-
 	switch (SecenState)
 	{
-	case 1:
+	case LogoScene:
+		break;
+	case MenuScene:
+		break;
+	case FieldScene:
+		break;
+	case ShopScene:
+		break;
+	case MapScene:
+		break;
+	case BattleScene:
+		break;
+	case PlayerInfoScene:
+		break;
+	case ExitScene:
 		break;
 	}
+}
+
+void SceneMenu()
+{
+	Object* Cursor = new Object;
+	Initialize(Cursor, (char*)"◀", 63.0f, 7.0f);
+
+	OnDrawText((char*)"┌─────────────────┐", 36.0f, 4.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 5.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 6.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 7.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 8.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 9.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 10.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 11.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 12.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 13.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 14.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 15.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 16.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 17.0f);
+	OnDrawText((char*)"│                                  │", 36.0f, 18.0f);
+	OnDrawText((char*)"└─────────────────┘", 36.0f, 19.0f);
+
+	OnDrawText((char*)"1. 게임 시작", float(60 - strlen("1. 게임 시작")), 7.0f);
+	OnDrawText((char*)"2. 저장하기", float(60 - strlen("1. 게임 시작")), 10.0f);
+	OnDrawText((char*)"3. 불러오기", float(60 - strlen("1. 게임 시작")), 13.0f);
+	OnDrawText((char*)"4. 게임 종료", float(60 - strlen("1. 게임 시작")), 16.0f);
+
+	// ** [상] 키를 입력받음.
+	if (GetAsyncKeyState(VK_UP) && Cursor->TransInfo.Position.y != 7.0f)
+		Cursor->TransInfo.Position.y -= 3;
+
+	// ** [하] 키를 입력받음.
+	if (GetAsyncKeyState(VK_DOWN) && Cursor->TransInfo.Position.y != 16.0f)
+		Cursor->TransInfo.Position.y += 3;
+
+	OnDrawText(Cursor->Info.Texture, Cursor->TransInfo.Position.x, Cursor->TransInfo.Position.y);
+
+	if (GetAsyncKeyState(VK_RETURN))
+	{
+		switch (int(Cursor->TransInfo.Position.y))
+		{
+		case 7:
+			delete Cursor;
+			SecenState = FieldScene;
+			break;
+		case 10:
+			break;
+		case 13:
+			break;
+		case 16:
+			delete Cursor;
+			SecenState = ExitScene;
+			break;
+		}
+	}
+}
+
+void SceneField(Object* _Player)
+{
+	Object* Cursor = new Object;
+	Initialize(Cursor, (char*)"↖", 60.0f, 15.0f);
+
+	for (int i = 0; i < 60; ++i)
+	{
+		OnDrawText((char*)"─", float(0 + strlen("─")) * i + 0.5f, 20.0f);
+	}
+
+
+	OnDrawText(Cursor->Info.Texture, Cursor->TransInfo.Position.x, Cursor->TransInfo.Position.y);
 }
