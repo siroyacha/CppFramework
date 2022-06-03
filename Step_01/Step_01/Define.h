@@ -3,12 +3,11 @@ int SecenState = 0;
 
 const int LogoScene = 1;
 const int MenuScene = 2;
-const int FieldScene = 3;
+const int InfoScene = 3;
 const int ShopScene = 4;
 const int MapScene = 5;
 const int BattleScene = 6;
-const int PlayerInfoScene = 7;
-const int ExitScene = 8;
+const int ExitScene = 7;
 
 // ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
 void Initialize(Object* _Object, char* _Texture, float _PosX = 0.0f, float _PosY = 0.0f, float _PosZ = 0.0f, int _Hp = 1, int _Boom = 0, int _Mode = 1);
@@ -257,15 +256,13 @@ void SceneManager(Object* _Player)
 		break;
 	case MenuScene:
 		break;
-	case FieldScene:
+	case InfoScene:
 		break;
 	case ShopScene:
 		break;
 	case MapScene:
 		break;
 	case BattleScene:
-		break;
-	case PlayerInfoScene:
 		break;
 	case ExitScene:
 		break;
@@ -315,7 +312,7 @@ void SceneMenu()
 		{
 		case 7:
 			delete Cursor;
-			SecenState = FieldScene;
+			SecenState = InfoScene;
 			break;
 		case 10:
 			break;
@@ -329,16 +326,64 @@ void SceneMenu()
 	}
 }
 
-void SceneField(Object* _Player)
+void SceneInfo(Object* _Player)
 {
 	Object* Cursor = new Object;
-	Initialize(Cursor, (char*)"↖", 60.0f, 15.0f);
+	Initialize(Cursor, (char*)"↖", 33.5f, 22.0f);
 
 	for (int i = 0; i < 60; ++i)
 	{
 		OnDrawText((char*)"─", float(0 + strlen("─")) * i + 0.5f, 20.0f);
 	}
-
+	/*
+	플레이어 정보
+	*/
+	OnDrawText((char*)"상점 열기", 25.0f, 21.0f);
+	OnDrawText((char*)"출격 하기", 55.0f, 21.0f);
+	OnDrawText((char*)"메뉴 열기", 85.0f, 21.0f);
 
 	OnDrawText(Cursor->Info.Texture, Cursor->TransInfo.Position.x, Cursor->TransInfo.Position.y);
+	
+	if (GetAsyncKeyState(VK_LEFT) && Cursor->TransInfo.Position.x == 33.5f)
+		Cursor->TransInfo.Position.x -= 30.0f;
+
+	if (GetAsyncKeyState(VK_RIGHT) && Cursor->TransInfo.Position.x == 93.5f)
+		Cursor->TransInfo.Position.x += 30.0f;
+
+	if (GetAsyncKeyState(VK_RETURN))
+	{
+		switch (int(Cursor->TransInfo.Position.x))
+		{
+		case 33:
+			delete Cursor;
+			SecenState = ShopScene;
+			break;
+		case 63:
+			delete Cursor;
+			SecenState = MapScene;
+			break;
+		case 93:
+			delete Cursor;
+			SecenState = MenuScene;
+			break;
+		}		
+	}
+}
+
+void SceneShop(Object* _Player)
+{
+	Object* Shop = new Object;
+	Initialize(Shop, (char*)"＠");
+
+	Object* Cursor = new Object;
+	Initialize(Cursor, (char*)"◁", 60.0f, 15.0f);
+
+	OnDrawText((char*)"물품 목록", 55.0f, 2.0f);
+
+	OnDrawText(Cursor->Info.Texture, Cursor->TransInfo.Position.x, Cursor->TransInfo.Position.y);
+}
+
+void SceneBattle(Object* _Player)
+{
+
 }

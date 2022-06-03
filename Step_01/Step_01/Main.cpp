@@ -1,4 +1,4 @@
-// ** Framework v0.8.2
+// ** Framework v0.8.3
 #include"Headers.h"
 
 // ** 충돌, 거리 구하기 필수로 넣기
@@ -652,10 +652,11 @@ int main(void)
 	}
 	delete Player;
 
+
 	system("mode con:cols=120 lines=30");
 
 	system("cls");
-	
+
 
 	return 0;
 }
