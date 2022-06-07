@@ -9,6 +9,8 @@ const int MapScene = 4;
 const int BattleScene = 5;
 const int ExitScene = 6;
 
+int Countdown = 150;
+
 // ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
 void Initialize(Object* _Object, char* _Texture, float _PosX = 0.0f, float _PosY = 0.0f, float _PosZ = 0.0f, int _Hp = 1, int _Boom = 0, int _Mode = 1);
 
@@ -424,8 +426,74 @@ DrawTextInfo BackGroundInitialize(int _i)
 	return BackGround;
 }
 
-void InitializeEnemy()
+void SceneLoad(Object* _Player)
 {
+	Object* Enemy[64] = { nullptr };
+
+	ULONGLONG EnemyTime = GetTickCount64();
+
+	Object* EnemyBullet[256] = { nullptr };
+
+	Vector3 EnemyBulletDirection[256];
+
+	if (EnemyTime + 1500 < GetTickCount64())
+	{
+		EnemyTime = GetTickCount64();
+
+		for (int i = 0; i < 64; ++i)
+		{
+			if (Enemy[i] == nullptr)
+			{
+				srand((GetTickCount() + i * i) * GetTickCount());
+
+				Enemy[i] = CreatEnemy(float(rand() % 100), 1.0f);
+
+				break;
+			}
+
+			for (int j = 0; j < 256; ++j)
+			{
+				if (EnemyBullet[j] == nullptr && (Enemy[i]->Time + ((rand() % 15) * 100)) < GetTickCount64())
+				{
+					EnemyBullet[j] = CreatBullet(
+						Enemy[i]->TransInfo.Position.x,
+						Enemy[i]->TransInfo.Position.y + 1.0f);
+
+					EnemyBulletDirection[i] = GetDirection(_Player, EnemyBullet[i]);
+
+					Enemy[i]->Time = GetTickCount64();
+
+					break;
+				}
+			}
+		}
+	}
+}
+void SceneBattle(Object* _Player, Object* _Enemy, Object* _EnemyBullet, Vector3 _EnemyBulletDirection)
+{
+	Vector3 EnemyBulletDirection[256];
+
+	for (int i = 0; i < 256; ++i)
+	{
+		OnDrawText(_EnemyBullet[i].Info.Texture,
+			_EnemyBullet[i].TransInfo.Position.x,
+			_EnemyBullet[i].TransInfo.Position.y);
+
+		_EnemyBullet[i].TransInfo.Position.x += _EnemyBulletDirection[i].x * 2.0f;
+		_EnemyBullet[i].TransInfo.Position.y += _EnemyBulletDirection[i].y * 1.5f;
+
+	}
+
+}
+
+void SceneBattle(Object* _Player)
+{
+	DrawTextInfo BackGround[30];
+	for (int i = 0; i < 30; ++i)
+	{
+		BackGround[i] = BackGroundInitialize(i);
+	}
+
 	// ** Enemy선언 및 동적할당.
 	Object* Enemy[32];	// = new Object;
 
@@ -438,6 +506,40 @@ void InitializeEnemy()
 
 	Vector3 EnemyBulletDirection[128];
 
+	Object* Item[32];
+
+	for (int i = 0; i < 32; ++i)
+		Item[i] = nullptr;
+
+	Object* Boss[4];
+
+	for (int i = 0; i < 4; ++i)
+		Boss[i] = nullptr;
+
+	int Score = 0;
+
+	Object* Bullet[128] = { nullptr };
+	Object* BossBullet[128] = { nullptr };
+
+	Vector3 BossBulletDirection[128];
+	Vector3 ItemDirection[32];
+
+	bool Check = false;
+
+	int Power = 0;
+
+	bool crash = false;
+	bool crash2 = false;
+
+	// ** 배경 출력
+	for (int i = 0; i < 30; ++i)
+	{
+		OnDrawText(
+			BackGround[i].Info.Texture,
+			BackGround[i].TransInfo.Position.x,
+			BackGround[i].TransInfo.Position.y,
+			BackGround[i].Info.Color);
+	}
 
 	if (EnemyTime + 1500 < GetTickCount64())
 	{
@@ -469,54 +571,6 @@ void InitializeEnemy()
 				}
 			}
 		}
-	}
-}
-
-void SceneBattle(Object* _Player, Object* _Enemy)
-{	
-	DrawTextInfo BackGround[30];
-	for (int i = 0; i < 30; ++i)
-	{
-		BackGround[i] = BackGroundInitialize(i);
-	}
-
-	Object* Item[32];
-
-	for (int i = 0; i < 32; ++i)
-		Item[i] = nullptr;
-
-	Object* Boss[4];
-
-	for (int i = 0; i < 4; ++i)
-		Boss[i] = nullptr;
-
-	ULONGLONG CountdownTime = GetTickCount64();
-
-	int Score = 0;
-
-	Object* Bullet[128] = { nullptr };
-	Object* BossBullet[128] = { nullptr };
-
-	Vector3 BossBulletDirection[128];
-	Vector3 ItemDirection[32];
-
-	bool Check = false;
-
-	int Power = 0;
-
-	int Countdown = 150;
-
-	bool crash = false;
-	bool crash2 = false;
-
-	// ** 배경 출력
-	for (int i = 0; i < 30; ++i)
-	{
-		OnDrawText(
-			BackGround[i].Info.Texture,
-			BackGround[i].TransInfo.Position.x,
-			BackGround[i].TransInfo.Position.y,
-			BackGround[i].Info.Color);
 	}
 
 	if (Countdown == 120)
@@ -935,9 +989,9 @@ void SceneBattle(Object* _Player, Object* _Enemy)
 
 
 	OnDrawText((char*)"남은 시간 : ", float(60 - strlen("남은 시간 : ")), 1.0f);
-	if (CountdownTime + 1000 < GetTickCount64())
+	if (_Player->Time + 1000 < GetTickCount64())
 	{
-		CountdownTime = GetTickCount64();
+		_Player->Time = GetTickCount64();
 		--Countdown;
 	}
 	OnDrawText(Countdown, 60.0f, 1.0f);
@@ -953,6 +1007,4 @@ void SceneBattle(Object* _Player, Object* _Enemy)
 	{
 		OnDrawText((char*)"Boom", (4.0f * i) + 0.5f, 58.0f);
 	}
-
-
 }
