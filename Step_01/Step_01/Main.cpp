@@ -1,7 +1,8 @@
-// ** Framework v0.8.4
+// ** Framework v0.8.5
 #include"Headers.h"
 
 // ** 충돌, 거리 구하기 필수로 넣기
+// ** 22일까지 완성으로 우선 계산
 
 int main(void)
 {
@@ -27,7 +28,7 @@ int main(void)
 	{
 		// ** 초기화된 시간으로부터 +50 만큼 증가하면...
 		// ** (프레임과 프레임사이의 시간 간격을 0.5초로 셋팅)
-		if (Time + 500 < GetTickCount64())
+		if (Time + 200 < GetTickCount64())
 		{
 			// ** 증가된 값만큼 다시 초기화.
 			Time = GetTickCount64();
