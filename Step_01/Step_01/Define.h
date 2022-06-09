@@ -67,7 +67,7 @@ void SceneMap(Object* _Player, Object* _Cursor);
 
 void SceneLoad(Object* _Player, Object* _Cursor);
 
-void SceneBattle(Object* _Playe, Object* _Cursorr);
+void SceneBattle(Object* _Player, Object* _Cursorr);
 
 // ** 함수 선언부
 void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float _PosZ, int _Hp, int _Boom, int _Mode)
@@ -396,10 +396,39 @@ void SceneInfo(Object* _Player, Object* _Cursor)
 
 void SceneShop(Object* _Player, Object* _Cursor)
 {
-	Object* Shop = new Object;
-	Initialize(Shop, (char*)"＠");
+	/*
+for (int j = 0; j < 20; ++j)
+{
+	for (int i = 0; i < 60; ++i)
+	{
+		OnDrawText((char*)"┌", 20.0f + (float)i, 5.0f + (float)j);
+		if (0 < i < 60)
+			OnDrawText((char*)"─", 20.0f + (float)i, 5.0f + (float)j);
+		if (i == 59 && j == 0)
+			OnDrawText((char*)"┐", 21.0f + (float)i, 5.0f + (float)j);
+		if (0 < j < 60)
+			OnDrawText((char*)"│", 20.0f + (float)i, 5.0f + (float)j);
+		if (1 < i < 59 && 1 < j < 19)
+			OnDrawText((char*)" ", 20.0f + (float)i, 5.0f + (float)j);
+		if (j == 19)
+			OnDrawText((char*)"└", 20.0f + (float)i, 5.0f + (float)j);
+		if (j == 19 && i == 59)
+			OnDrawText((char*)"┘", 20.0f + (float)i, 5.0f + (float)j);
+	}
+}
+		*/
 
-	OnDrawText((char*)"물품 목록", 55.0f, 2.0f);
+	// ** 더블버퍼 사용법 알아야 해결 가능
+
+	for (int i = 0; i < 20; ++i)
+	{
+		for (int j = 0; j < 60; ++j)
+		{
+			OnDrawText((char*)"┌", 20.0f + (float)j, 5.0f + (float)i);
+		}
+	}
+
+	OnDrawText((char*)"물품 목록", 55.0f, 6.0f);
 
 	OnDrawText(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
 }
@@ -450,20 +479,34 @@ void SceneMap(Object* _Player, Object* _Cursor)
 		}
 	}
 
-
-	OnDrawText((char*)"base", 72.0f, 26.0f, 1);
+	for (int i = 0; i < 4; ++i)
+	{
+		for (int j = 0; j < 8; ++j)
+		{
+			OnDrawText((char*)"/", 68.0f + (float)j, 28.0f + (float)i, 7);
+			OnDrawText((char*)"/", 66.0f, 29.0f, 7);
+			OnDrawText((char*)"/", 66.0f, 30.0f, 7);
+			OnDrawText((char*)"/", 67.0f, 29.0f, 7);
+			OnDrawText((char*)"/", 67.0f, 30.0f, 7);
+			OnDrawText((char*)"/", 76.0f, 29.0f, 7);
+			OnDrawText((char*)"/", 76.0f, 30.0f, 7);
+			OnDrawText((char*)"/", 77.0f, 29.0f, 7);
+			OnDrawText((char*)"/", 77.0f, 30.0f, 7);
+		}
+	}
 	Sleep(5000);
 	SceneState = BattleScene;
 }
 
+
 void SceneLoad(Object* _Player, Object* _Cursor)
 {
-	int LoadCount = 40;
+	int LoadCount = 20;
 	int Loading = 0;
 	while (LoadCount)
 	{
 
-		if (_Player->Time + 500 < GetTickCount64())
+		if (_Player->Time + 200 < GetTickCount64())
 		{
 			_Player->Time = GetTickCount64();
 			system("cls");
@@ -476,7 +519,8 @@ void SceneLoad(Object* _Player, Object* _Cursor)
 			{
 				OnDrawText((char*)"▷", 2.0f + (float)Loading, 58.0f);
 				if (Loading == 10)
-					Loading = 0;			
+					Loading = 0;
+
 			}
 		}
 	}
@@ -635,8 +679,8 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 						}
 					}
 
-					if (Bullet[i] != nullptr)
-						if (Boss[0] != nullptr)
+					if (Boss[0] != nullptr)
+						if (Bullet[i] != nullptr)
 						{
 							if (Collision(Bullet[i], Boss[0]))
 							{
@@ -754,9 +798,10 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 						crash = false;
 						crash2 = false;
 					}
-
 					if (Item[i] != nullptr)
-						if (Item[i]->Time + 3000 == GetTickCount64())
+					{
+						if (Item[i]->TransInfo.Position.y > 60 || Item[i]->TransInfo.Position.y < 0 ||
+							Item[i]->TransInfo.Position.x > 100 || Item[i]->TransInfo.Position.x < 0)
 						{
 							delete Item[i];
 							Item[i] = nullptr;
@@ -764,6 +809,7 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 							crash = false;
 							crash2 = false;
 						}
+					}
 				}
 			}
 
