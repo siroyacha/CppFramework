@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include <string>
 #include <math.h>
+#include <ctime>
 
 using namespace std;
 

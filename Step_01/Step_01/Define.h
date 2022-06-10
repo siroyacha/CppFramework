@@ -10,6 +10,13 @@ const int LoadScene = 5;
 const int BattleScene = 6;
 const int ExitScene = 7;
 
+// 더블버퍼 테스트
+static int g_nScreenindex;
+static HANDLE g_hScreen[2];
+
+clock_t CurTime, OldTime;
+char* FPSTextInfo = new char[256];
+
 // ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
 void Initialize(Object* _Object, char* _Texture, float _PosX = 0.0f, float _PosY = 0.0f, float _PosZ = 0.0f, int _Hp = 1, int _Boom = 0, int _Mode = 1);
 
@@ -50,6 +57,20 @@ Vector3 GetDirection(const Object* _ObjectA, const Object* _ObjectB);
 Object* CreatBoss(const float _x, const float _y, const float _Scale_x, const int _hp);
 
 Object* CreatItem(const float _x, const float _y, const int _mode);
+
+void ScreenLint();
+
+void ScreenFlipping();
+
+void ScreenClear();
+
+void ScreenRelease();
+
+void ScreenPrint(int x, int y, char* string);
+
+void Render();
+
+void Release();
 
 DrawTextInfo BackGroundInitialize(int _i);
 
@@ -133,10 +154,6 @@ void SetTextColor(const int _Color)
 
 void OnDrawText(const char* _str, const float _x, const float _y, const int _Color)
 {
-	/*
-	if (!(_y <= 0 || _y >= 60 || _x <= 0 || _x >= 100))
-	{	}
-	*/
 	SetCursorPosition(_x, _y);
 	SetTextColor(_Color);
 	cout << _str;
@@ -144,16 +161,36 @@ void OnDrawText(const char* _str, const float _x, const float _y, const int _Col
 
 void OnDrawText(const int _Value, const float _x, const float _y, const int _Color)
 {
-	/*
-	if (!(_y <= 0 || _y >= 60 || _x <= 0 || _x >= 100))
-	{	}
-	*/
 	SetCursorPosition(_x, _y);
 	SetTextColor(_Color);
 
 	char* pText = new char[4];
+	sprintf(FPSTextInfo, "FPS : %d\n");
+
 	_itoa(_Value, pText, 10);
+
 	cout << _Value;
+}
+
+void Render()
+{
+	ScreenClear();
+	if (CurTime - OldTime >= 1000)
+	{
+		sprintf(FPSTextInfo, "FPS : %d\n");
+		OldTime = CurTime;
+	}
+
+	ScreenPrint(0, 0, FPSTextInfo);
+	ScreenFlipping();
+}
+
+void ScreenPrint(int x, int y, char* string)
+{
+	DWORD dw;
+	COORD CursorPosition = { x,y };
+	SetConsoleCursorPosition(g_hScreen[g_nScreenindex], CursorPosition);
+	WriteFile(g_hScreen[g_nScreenindex], string, strlen(string), &dw, NULL);
 }
 
 void HideCursor(const bool _Visible)
@@ -265,6 +302,38 @@ Object* CreatItem(const float _x, const float _y, const int _mode)
 	return _Object;
 }
 
+void ScreenLint()
+{
+	CONSOLE_CURSOR_INFO cci;
+	g_hScreen[0] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+	g_hScreen[1] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+
+	cci.dwSize = 1;
+	cci.bVisible = false;
+	SetConsoleCursorInfo(g_hScreen[0], &cci);
+	SetConsoleCursorInfo(g_hScreen[1], &cci);
+}
+void ScreenFlipping()
+{
+	SetConsoleActiveScreenBuffer(g_hScreen[g_nScreenindex]);
+	g_nScreenindex = !g_nScreenindex;
+}
+void ScreenClear()
+{
+	COORD Coor = { 0,0 };
+	DWORD dw;
+	FillConsoleOutputCharacter(g_hScreen[g_nScreenindex], ' ', 120 * 60, Coor, &dw);
+}
+void ScreenRelease()
+{
+	CloseHandle(g_hScreen[0]);
+	CloseHandle(g_hScreen[1]);
+}
+void Release()
+{
+	delete[] FPSTextInfo;
+}
+
 void SceneManager(Object* _Player, Object* _Cursor)
 {
 	switch (SceneState)
@@ -356,6 +425,7 @@ void SceneMenu(Object* _Player, Object* _Cursor)
 
 void SceneInfo(Object* _Player, Object* _Cursor)
 {
+	Render();
 	for (int i = 0; i < 60; ++i)
 	{
 		OnDrawText((char*)"─", float(0 + strlen("─")) * i + 0.5f, 20.0f);
