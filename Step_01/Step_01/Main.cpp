@@ -1,4 +1,4 @@
-// ** Framework v0.8.6.5
+// ** Framework v0.8.6.6
 #include"Headers.h"
 
 // ** 충돌, 거리 구하기 필수로 넣기
@@ -44,7 +44,7 @@ int main(void)
 			Time = GetTickCount64();
 
 			// ** 콘솔창 버퍼 전체 삭제
-			//system("cls");
+			system("cls");
 
 			SceneManager(Player, Cursor);
 					

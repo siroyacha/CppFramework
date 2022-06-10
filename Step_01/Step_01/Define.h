@@ -66,9 +66,11 @@ void ScreenClear();
 
 void ScreenRelease();
 
+/*
 void ScreenPrint(int x, int y, char* string);
 
 void Render();
+*/
 
 void Release();
 
@@ -142,8 +144,7 @@ void SetCursorPosition(const float _x, const float _y)
 {
 	COORD Pos = { (SHORT)_x, (SHORT)_y };
 
-	SetConsoleCursorPosition(
-		GetStdHandle(STD_OUTPUT_HANDLE), Pos);
+	SetConsoleCursorPosition(g_hScreen[g_nScreenindex], Pos);
 }
 
 void SetTextColor(const int _Color)
@@ -154,24 +155,29 @@ void SetTextColor(const int _Color)
 
 void OnDrawText(const char* _str, const float _x, const float _y, const int _Color)
 {
+	DWORD dw;
+
 	SetCursorPosition(_x, _y);
 	SetTextColor(_Color);
-	cout << _str;
+
+	WriteFile(g_hScreen[g_nScreenindex], _str, strlen(_str), &dw, NULL);
 }
 
 void OnDrawText(const int _Value, const float _x, const float _y, const int _Color)
 {
+	DWORD dw;
+
 	SetCursorPosition(_x, _y);
 	SetTextColor(_Color);
 
 	char* pText = new char[4];
-	sprintf(FPSTextInfo, "FPS : %d\n");
 
-	_itoa(_Value, pText, 10);
+	char* temp = _itoa(_Value, pText, 10);
 
-	cout << _Value;
+	WriteFile(g_hScreen[g_nScreenindex], temp, strlen(temp), &dw, NULL);
 }
 
+/*
 void Render()
 {
 	ScreenClear();
@@ -192,6 +198,7 @@ void ScreenPrint(int x, int y, char* string)
 	SetConsoleCursorPosition(g_hScreen[g_nScreenindex], CursorPosition);
 	WriteFile(g_hScreen[g_nScreenindex], string, strlen(string), &dw, NULL);
 }
+*/
 
 void HideCursor(const bool _Visible)
 {
@@ -425,7 +432,6 @@ void SceneMenu(Object* _Player, Object* _Cursor)
 
 void SceneInfo(Object* _Player, Object* _Cursor)
 {
-	Render();
 	for (int i = 0; i < 60; ++i)
 	{
 		OnDrawText((char*)"¦¡", float(0 + strlen("¦¡")) * i + 0.5f, 20.0f);
