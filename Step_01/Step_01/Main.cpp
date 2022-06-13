@@ -1,4 +1,4 @@
-// ** Framework v0.8.6.6
+// ** Framework v0.8.6.7
 #include"Headers.h"
 
 // ** 충돌, 거리 구하기 필수로 넣기
@@ -11,7 +11,7 @@ int main(void)
 	HideCursor(false);
 	
 	
-	system("mode con:cols=120 lines=30");
+	system("mode con:cols=150 lines=60");
 
 	// ** 플레이어 선언 및 동적할당.
 	Object* Player = new Object;
@@ -25,20 +25,14 @@ int main(void)
 
 	ScreenLint();
 
-	memset(FPSTextInfo, '0', 256);
-
-	OldTime = clock(); // 시간을 측정한다. 1초마다 갱신한다.
-
 	// ** 현재 시간으로 초기화.
 	ULONGLONG Time = GetTickCount64();
 	// ** 출력
 	while (true)
 	{
-		CurTime = clock();
-
 		// ** 초기화된 시간으로부터 +50 만큼 증가하면...
 		// ** (프레임과 프레임사이의 시간 간격을 0.5초로 셋팅)
-		if (Time + 200 < GetTickCount64())
+		if (Time + 50 < GetTickCount64())
 		{
 			// ** 증가된 값만큼 다시 초기화.
 			Time = GetTickCount64();
@@ -46,8 +40,7 @@ int main(void)
 			// ** 콘솔창 버퍼 전체 삭제
 			system("cls");
 
-			SceneManager(Player, Cursor);
-					
+			SceneManager(Player, Cursor);					
 		}
 	}
 	delete Player;

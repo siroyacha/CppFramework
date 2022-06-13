@@ -11,10 +11,9 @@ const int BattleScene = 6;
 const int ExitScene = 7;
 
 // 더블버퍼 테스트
-static int g_nScreenindex;
+static int g_nScreenindex;;
 static HANDLE g_hScreen[2];
 
-clock_t CurTime, OldTime;
 char* FPSTextInfo = new char[256];
 
 // ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
@@ -66,29 +65,37 @@ void ScreenClear();
 
 void ScreenRelease();
 
-/*
-void ScreenPrint(int x, int y, char* string);
-
-void Render();
-*/
+void ScreenPrint(const char* _Texture, const float _x, const float _y, const int _Color = 15);
 
 void Release();
 
-DrawTextInfo BackGroundInitialize(int _i);
-
 void SceneManager(Object* _Player, Object* _Cursor);
+
+void LogoRender();
 
 void SceneLogo();
 
+void MenuRender(Object* _Cursor);
+
 void SceneMenu(Object* _Player, Object* _Cursor);
+
+void InfoRender(Object* _Player, Object* _Cursor);
 
 void SceneInfo(Object* _Player, Object* _Cursor);
 
+void ShopRender(Object* _Player, Object* _Cursor);
+
 void SceneShop(Object* _Player, Object* _Cursor);
+
+void MapRender(Object* _Player, Object* _Cursor);
 
 void SceneMap(Object* _Player, Object* _Cursor);
 
+void LoadRender(Object* _Player, Object* _Cursor);
+
 void SceneLoad(Object* _Player, Object* _Cursor);
+
+DrawTextInfo BackGroundInitialize(int _i);
 
 void SceneBattle(Object* _Player, Object* _Cursorr);
 
@@ -144,61 +151,55 @@ void SetCursorPosition(const float _x, const float _y)
 {
 	COORD Pos = { (SHORT)_x, (SHORT)_y };
 
-	SetConsoleCursorPosition(g_hScreen[g_nScreenindex], Pos);
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
+	//SetConsoleCursorPosition(g_hScreen[g_nScreenindex], Pos);
 }
 
 void SetTextColor(const int _Color)
 {
-	SetConsoleTextAttribute(
-		GetStdHandle(STD_OUTPUT_HANDLE), _Color);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), _Color);
+	SetConsoleTextAttribute(g_hScreen[g_nScreenindex], _Color);
 }
 
 void OnDrawText(const char* _str, const float _x, const float _y, const int _Color)
 {
+	/*
 	DWORD dw;
+	ScreenClear();
+	*/
 
 	SetCursorPosition(_x, _y);
 	SetTextColor(_Color);
+	cout << _str;
 
+	/*
 	WriteFile(g_hScreen[g_nScreenindex], _str, strlen(_str), &dw, NULL);
+	ScreenFlipping();
+	*/
 }
 
 void OnDrawText(const int _Value, const float _x, const float _y, const int _Color)
 {
+	/*
 	DWORD dw;
+	ScreenClear();
+	*/
 
 	SetCursorPosition(_x, _y);
 	SetTextColor(_Color);
 
 	char* pText = new char[4];
+	_itoa(_Value, pText, 10);
+	cout << _Value;
 
+	/*
 	char* temp = _itoa(_Value, pText, 10);
 
 	WriteFile(g_hScreen[g_nScreenindex], temp, strlen(temp), &dw, NULL);
-}
-
-/*
-void Render()
-{
-	ScreenClear();
-	if (CurTime - OldTime >= 1000)
-	{
-		sprintf(FPSTextInfo, "FPS : %d\n");
-		OldTime = CurTime;
-	}
-
-	ScreenPrint(0, 0, FPSTextInfo);
 	ScreenFlipping();
-}
 
-void ScreenPrint(int x, int y, char* string)
-{
-	DWORD dw;
-	COORD CursorPosition = { x,y };
-	SetConsoleCursorPosition(g_hScreen[g_nScreenindex], CursorPosition);
-	WriteFile(g_hScreen[g_nScreenindex], string, strlen(string), &dw, NULL);
+	*/
 }
-*/
 
 void HideCursor(const bool _Visible)
 {
@@ -320,22 +321,37 @@ void ScreenLint()
 	SetConsoleCursorInfo(g_hScreen[0], &cci);
 	SetConsoleCursorInfo(g_hScreen[1], &cci);
 }
+
 void ScreenFlipping()
 {
 	SetConsoleActiveScreenBuffer(g_hScreen[g_nScreenindex]);
+
 	g_nScreenindex = !g_nScreenindex;
 }
+
 void ScreenClear()
 {
 	COORD Coor = { 0,0 };
 	DWORD dw;
-	FillConsoleOutputCharacter(g_hScreen[g_nScreenindex], ' ', 120 * 60, Coor, &dw);
+	FillConsoleOutputCharacter(g_hScreen[g_nScreenindex], ' ', 150 * 70, Coor, &dw);
 }
+
 void ScreenRelease()
 {
 	CloseHandle(g_hScreen[0]);
 	CloseHandle(g_hScreen[1]);
 }
+
+
+void ScreenPrint(const char* _Texture, const float _x, const float _y, const int _Color)
+{
+	DWORD dw;
+	COORD CursorPosition = { _x,_y };
+	SetConsoleCursorPosition(g_hScreen[g_nScreenindex], CursorPosition);
+	SetConsoleTextAttribute(g_hScreen[g_nScreenindex], _Color);
+	WriteFile(g_hScreen[g_nScreenindex], _Texture, strlen(_Texture), &dw, NULL);
+}
+
 void Release()
 {
 	delete[] FPSTextInfo;
@@ -343,6 +359,8 @@ void Release()
 
 void SceneManager(Object* _Player, Object* _Cursor)
 {
+	ScreenFlipping();
+
 	switch (SceneState)
 	{
 	case LogoScene:
@@ -358,11 +376,9 @@ void SceneManager(Object* _Player, Object* _Cursor)
 		SceneShop(_Player, _Cursor);
 		break;
 	case MapScene:
-		system("mode con:cols=150 lines=60");
 		SceneMap(_Player, _Cursor);
 		break;
 	case BattleScene:
-		system("mode con:cols=100 lines=60");
 		SceneLoad(_Player, _Cursor);
 		break;
 	case ExitScene:
@@ -370,37 +386,50 @@ void SceneManager(Object* _Player, Object* _Cursor)
 		break;
 	}
 }
+void LogoRender()
+{
+	ScreenClear();
+	ScreenPrint((char*)"test", 55.0f, 15.0f, 11);
+	ScreenPrint((char*)"Space Bar를 눌러 시작", 45.0f, 25.0f);
+}
+
 void SceneLogo()
 {
-	OnDrawText((char*)"test", 55.0f, 15.0f, 11);
+	LogoRender();
+	if (GetAsyncKeyState(VK_SPACE))
+		SceneState++;
+}
 
-	SceneState++;
+void MenuRender(Object* _Cursor)
+{
+	ScreenClear();
+
+	ScreenPrint((char*)"┌─────────────────┐", 36.0f, 4.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 5.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 6.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 7.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 8.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 9.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 10.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 11.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 12.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 13.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 14.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 15.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 16.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 17.0f);
+	ScreenPrint((char*)"│                                  │", 36.0f, 18.0f);
+	ScreenPrint((char*)"└─────────────────┘", 36.0f, 19.0f);
+
+	ScreenPrint((char*)"1. 게임 시작", float(60 - strlen("1. 게임 시작")), 7.0f);
+	ScreenPrint((char*)"2. 저장하기", float(60 - strlen("1. 게임 시작")), 10.0f);
+	ScreenPrint((char*)"3. 불러오기", float(60 - strlen("1. 게임 시작")), 13.0f);
+	ScreenPrint((char*)"4. 게임 종료", float(60 - strlen("1. 게임 시작")), 16.0f);
+	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
 }
 
 void SceneMenu(Object* _Player, Object* _Cursor)
-{
-	OnDrawText((char*)"┌─────────────────┐", 36.0f, 4.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 5.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 6.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 7.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 8.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 9.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 10.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 11.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 12.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 13.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 14.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 15.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 16.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 17.0f);
-	OnDrawText((char*)"│                                  │", 36.0f, 18.0f);
-	OnDrawText((char*)"└─────────────────┘", 36.0f, 19.0f);
-
-	OnDrawText((char*)"1. 게임 시작", float(60 - strlen("1. 게임 시작")), 7.0f);
-	OnDrawText((char*)"2. 저장하기", float(60 - strlen("1. 게임 시작")), 10.0f);
-	OnDrawText((char*)"3. 불러오기", float(60 - strlen("1. 게임 시작")), 13.0f);
-	OnDrawText((char*)"4. 게임 종료", float(60 - strlen("1. 게임 시작")), 16.0f);
-
+{	
 	// ** [상] 키를 입력받음.
 	if (GetAsyncKeyState(VK_UP) && _Cursor->TransInfo.Position.y > 7.0f)
 		_Cursor->TransInfo.Position.y -= 3;
@@ -408,8 +437,6 @@ void SceneMenu(Object* _Player, Object* _Cursor)
 	// ** [하] 키를 입력받음.
 	if (GetAsyncKeyState(VK_DOWN) && _Cursor->TransInfo.Position.y < 16.0f)
 		_Cursor->TransInfo.Position.y += 3;
-
-	OnDrawText(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
 
 	if (GetAsyncKeyState(VK_RETURN))
 	{
@@ -428,23 +455,29 @@ void SceneMenu(Object* _Player, Object* _Cursor)
 			break;
 		}
 	}
+	MenuRender(_Cursor);
 }
 
-void SceneInfo(Object* _Player, Object* _Cursor)
+void InfoRender(Object* _Player, Object* _Cursor)
 {
+	ScreenClear();
+
 	for (int i = 0; i < 60; ++i)
 	{
-		OnDrawText((char*)"─", float(0 + strlen("─")) * i + 0.5f, 20.0f);
+		ScreenPrint((char*)"─", float(0 + strlen("─")) * i + 0.5f, 20.0f);
 	}
 	/*
 	플레이어 정보
 	*/
-	OnDrawText((char*)"상점 열기", 25.0f, 21.0f);
-	OnDrawText((char*)"출격 하기", 55.0f, 21.0f);
-	OnDrawText((char*)"메뉴 열기", 85.0f, 21.0f);
+	ScreenPrint((char*)"상점 열기", 25.0f, 21.0f);
+	ScreenPrint((char*)"출격 하기", 55.0f, 21.0f);
+	ScreenPrint((char*)"메뉴 열기", 85.0f, 21.0f);
 
-	OnDrawText(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
+	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
+}
 
+void SceneInfo(Object* _Player, Object* _Cursor)
+{
 	if (GetAsyncKeyState(VK_LEFT) && _Cursor->TransInfo.Position.x > 33.5f)
 		_Cursor->TransInfo.Position.x -= 30.0f;
 
@@ -468,45 +501,119 @@ void SceneInfo(Object* _Player, Object* _Cursor)
 			break;
 		}
 	}
+	InfoRender(_Player, _Cursor);
+}
+
+void ShopRender(Object* _Player, Object* _Cursor)
+{
+	ScreenClear();
+
+	for (int j = 0; j < 20; ++j)
+	{
+		for (int i = 0; i < 60; ++i)
+		{
+			ScreenPrint((char*)"┌", 20.0f + (float)i, 5.0f + (float)j);
+			if (0 < i < 60)
+				ScreenPrint((char*)"─", 20.0f + (float)i, 5.0f + (float)j);
+			if (i == 59 && j == 0)
+				ScreenPrint((char*)"┐", 21.0f + (float)i, 5.0f + (float)j);
+			if (0 < j < 60)
+				ScreenPrint((char*)"│", 20.0f + (float)i, 5.0f + (float)j);
+			if (1 < i < 59 && 1 < j < 19)
+				ScreenPrint((char*)" ", 20.0f + (float)i, 5.0f + (float)j);
+			if (j == 19)
+				ScreenPrint((char*)"└", 20.0f + (float)i, 5.0f + (float)j);
+			if (j == 19 && i == 59)
+				ScreenPrint((char*)"┘", 20.0f + (float)i, 5.0f + (float)j);
+		}
+	}
+
+	ScreenPrint((char*)"물품 목록", 55.0f, 6.0f);
+
+	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
+
 }
 
 void SceneShop(Object* _Player, Object* _Cursor)
 {
-	/*
-for (int j = 0; j < 20; ++j)
-{
-	for (int i = 0; i < 60; ++i)
-	{
-		OnDrawText((char*)"┌", 20.0f + (float)i, 5.0f + (float)j);
-		if (0 < i < 60)
-			OnDrawText((char*)"─", 20.0f + (float)i, 5.0f + (float)j);
-		if (i == 59 && j == 0)
-			OnDrawText((char*)"┐", 21.0f + (float)i, 5.0f + (float)j);
-		if (0 < j < 60)
-			OnDrawText((char*)"│", 20.0f + (float)i, 5.0f + (float)j);
-		if (1 < i < 59 && 1 < j < 19)
-			OnDrawText((char*)" ", 20.0f + (float)i, 5.0f + (float)j);
-		if (j == 19)
-			OnDrawText((char*)"└", 20.0f + (float)i, 5.0f + (float)j);
-		if (j == 19 && i == 59)
-			OnDrawText((char*)"┘", 20.0f + (float)i, 5.0f + (float)j);
-	}
+
+	ShopRender(_Player, _Cursor);
 }
-		*/
 
-	// ** 더블버퍼 사용법 알아야 해결 가능
+void MapRender(Object* _Player, Object* _Cursor)
+{
+	ScreenClear();
 
-	for (int i = 0; i < 20; ++i)
+	for (int i = 0; i < 50; ++i)
 	{
-		for (int j = 0; j < 60; ++j)
+		for (int j = 0; j < 130; ++j)
 		{
-			OnDrawText((char*)"┌", 20.0f + (float)j, 5.0f + (float)i);
+			ScreenPrint((char*)"/", 10.0f + (float)j, 5.0f + (float)i, 10);
 		}
 	}
 
-	OnDrawText((char*)"물품 목록", 55.0f, 6.0f);
+	for (int i = 0; i < 30; ++i)
+	{
+		for (int j = 0; j < 120; ++j)
+		{
+			ScreenPrint((char*)"/", 15.0f + (float)j, 10.0f + (float)i, 6);
+		}
+	}
 
-	OnDrawText(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
+	for (int i = 0; i < 4; ++i)
+	{
+		for (int j = 0; j < 8; ++j)
+		{
+			ScreenPrint((char*)"/", 68.0f + (float)j, 28.0f + (float)i, 7);
+			ScreenPrint((char*)"/", 66.0f, 29.0f, 7);
+			ScreenPrint((char*)"/", 66.0f, 30.0f, 7);
+			ScreenPrint((char*)"/", 67.0f, 29.0f, 7);
+			ScreenPrint((char*)"/", 67.0f, 30.0f, 7);
+			ScreenPrint((char*)"/", 76.0f, 29.0f, 7);
+			ScreenPrint((char*)"/", 76.0f, 30.0f, 7);
+			ScreenPrint((char*)"/", 77.0f, 29.0f, 7);
+			ScreenPrint((char*)"/", 77.0f, 30.0f, 7);
+		}
+	}
+	//ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
+}
+void SceneMap(Object* _Player, Object* _Cursor)
+{
+	MapRender(_Player, _Cursor);
+	if (GetAsyncKeyState(VK_SPACE))
+		SceneState = BattleScene;
+}
+
+void LoadRender(Object* _Player, Object* _Cursor)
+{
+	int LoadCount = 20;
+	int Loading = 0;
+	while (LoadCount)
+	{
+		ScreenClear();
+		if (_Player->Time + 200 < GetTickCount64())
+		{
+			_Player->Time = GetTickCount64();
+			ScreenPrint((char*)"출격중...", 44.0f, 25.0f);
+
+			--LoadCount;
+			++Loading;
+
+			for (int i = 0; i < 10; ++i)
+			{
+				ScreenPrint((char*)"▷", 2.0f + (float)Loading, 58.0f);
+				if (Loading == 10)
+					Loading = 0;
+
+			}
+		}
+	}
+}
+
+void SceneLoad(Object* _Player, Object* _Cursor)
+{
+	LoadRender(_Player, _Cursor);
+	SceneBattle(_Player, _Cursor);
 }
 
 DrawTextInfo BackGroundInitialize(int _i)
@@ -535,72 +642,6 @@ DrawTextInfo BackGroundInitialize(int _i)
 	BackGround.Info.Color = rand() % 8 + 1;
 
 	return BackGround;
-}
-
-void SceneMap(Object* _Player, Object* _Cursor)
-{
-	for (int i = 0; i < 50; ++i)
-	{
-		for (int j = 0; j < 130; ++j)
-		{
-			OnDrawText((char*)"/", 10.0f + (float)j, 5.0f + (float)i, 10);
-		}		
-	}
-
-	for (int i = 0; i < 30; ++i)
-	{
-		for (int j = 0; j < 120; ++j)
-		{
-			OnDrawText((char*)"/", 15.0f + (float)j, 10.0f + (float)i, 6);
-		}
-	}
-
-	for (int i = 0; i < 4; ++i)
-	{
-		for (int j = 0; j < 8; ++j)
-		{
-			OnDrawText((char*)"/", 68.0f + (float)j, 28.0f + (float)i, 7);
-			OnDrawText((char*)"/", 66.0f, 29.0f, 7);
-			OnDrawText((char*)"/", 66.0f, 30.0f, 7);
-			OnDrawText((char*)"/", 67.0f, 29.0f, 7);
-			OnDrawText((char*)"/", 67.0f, 30.0f, 7);
-			OnDrawText((char*)"/", 76.0f, 29.0f, 7);
-			OnDrawText((char*)"/", 76.0f, 30.0f, 7);
-			OnDrawText((char*)"/", 77.0f, 29.0f, 7);
-			OnDrawText((char*)"/", 77.0f, 30.0f, 7);
-		}
-	}
-	Sleep(5000);
-	SceneState = BattleScene;
-}
-
-
-void SceneLoad(Object* _Player, Object* _Cursor)
-{
-	int LoadCount = 20;
-	int Loading = 0;
-	while (LoadCount)
-	{
-
-		if (_Player->Time + 200 < GetTickCount64())
-		{
-			_Player->Time = GetTickCount64();
-			system("cls");
-			OnDrawText((char*)"출격중...", 44.0f, 25.0f);
-
-			--LoadCount;
-			++Loading;
-
-			for (int i = 0; i < 10; ++i)
-			{
-				OnDrawText((char*)"▷", 2.0f + (float)Loading, 58.0f);
-				if (Loading == 10)
-					Loading = 0;
-
-			}
-		}
-	}
-	SceneBattle(_Player, _Cursor);
 }
 
 void SceneBattle(Object* _Player, Object* _Cursor)
