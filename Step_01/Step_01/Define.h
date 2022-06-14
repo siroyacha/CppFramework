@@ -10,11 +10,13 @@ const int LoadScene = 5;
 const int BattleScene = 6;
 const int ExitScene = 7;
 
-// 더블버퍼 테스트
 static int g_nScreenindex;;
 static HANDLE g_hScreen[2];
 
-char* FPSTextInfo = new char[256];
+int ShopMode = 0;
+
+int LoadCount = 10;
+int Loading = 0;
 
 // ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
 void Initialize(Object* _Object, char* _Texture, float _PosX = 0.0f, float _PosY = 0.0f, float _PosZ = 0.0f, int _Hp = 1, int _Boom = 0, int _Mode = 1);
@@ -67,8 +69,6 @@ void ScreenRelease();
 
 void ScreenPrint(const char* _Texture, const float _x, const float _y, const int _Color = 15);
 
-void Release();
-
 void SceneManager(Object* _Player, Object* _Cursor);
 
 void LogoRender();
@@ -85,6 +85,12 @@ void SceneInfo(Object* _Player, Object* _Cursor);
 
 void ShopRender(Object* _Player, Object* _Cursor);
 
+void ShopRender2(Object* _Player, Object* _Cursor);
+
+void ShopRender3(Object* _Player, Object* _Cursor);
+
+void ShopRender4(Object* _Player, Object* _Cursor);
+
 void SceneShop(Object* _Player, Object* _Cursor);
 
 void MapRender(Object* _Player, Object* _Cursor);
@@ -92,6 +98,14 @@ void MapRender(Object* _Player, Object* _Cursor);
 void SceneMap(Object* _Player, Object* _Cursor);
 
 void LoadRender(Object* _Player, Object* _Cursor);
+
+void LoadRender1(Object* _Player, Object* _Cursor);
+
+void LoadRender2(Object* _Player, Object* _Cursor);
+
+void LoadRender3(Object* _Player, Object* _Cursor);
+
+void LoadRender4(Object* _Player, Object* _Cursor);
 
 void SceneLoad(Object* _Player, Object* _Cursor);
 
@@ -252,7 +266,7 @@ void UpdateInput(Object* _Object)
 	if (GetAsyncKeyState(VK_LEFT))
 		_Object->TransInfo.Position.x -= 1;
 
-	// ** [우] 키를 입력받음.
+		// ** [우] 키를 입력받음.
 	if (GetAsyncKeyState(VK_RIGHT))
 		_Object->TransInfo.Position.x += 1;
 }
@@ -352,11 +366,6 @@ void ScreenPrint(const char* _Texture, const float _x, const float _y, const int
 	WriteFile(g_hScreen[g_nScreenindex], _Texture, strlen(_Texture), &dw, NULL);
 }
 
-void Release()
-{
-	delete[] FPSTextInfo;
-}
-
 void SceneManager(Object* _Player, Object* _Cursor)
 {
 	ScreenFlipping();
@@ -389,8 +398,8 @@ void SceneManager(Object* _Player, Object* _Cursor)
 void LogoRender()
 {
 	ScreenClear();
-	ScreenPrint((char*)"test", 55.0f, 15.0f, 11);
-	ScreenPrint((char*)"Space Bar를 눌러 시작", 45.0f, 25.0f);
+	ScreenPrint((char*)"로고 들어갈 곳", 65.0f, 30.0f, 11);
+	ScreenPrint((char*)"Space Bar를 눌러 시작", 60.0f, 55.0f);
 }
 
 void SceneLogo()
@@ -404,53 +413,42 @@ void MenuRender(Object* _Cursor)
 {
 	ScreenClear();
 
-	ScreenPrint((char*)"┌─────────────────┐", 36.0f, 4.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 5.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 6.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 7.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 8.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 9.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 10.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 11.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 12.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 13.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 14.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 15.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 16.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 17.0f);
-	ScreenPrint((char*)"│                                  │", 36.0f, 18.0f);
-	ScreenPrint((char*)"└─────────────────┘", 36.0f, 19.0f);
+	ScreenPrint((char*)"┌─────────────────┐", 50.0f, 17.0f);
+	for (int i = 0; i < 14; i++)
+	{
+		ScreenPrint((char*)"│", 50.0f, float(18.0f + i));
+		ScreenPrint((char*)"│", 86.0f, float(18.0f + i));
+	}
+	ScreenPrint((char*)"└─────────────────┘", 50.0f, 32.0f);
 
-	ScreenPrint((char*)"1. 게임 시작", float(60 - strlen("1. 게임 시작")), 7.0f);
-	ScreenPrint((char*)"2. 저장하기", float(60 - strlen("1. 게임 시작")), 10.0f);
-	ScreenPrint((char*)"3. 불러오기", float(60 - strlen("1. 게임 시작")), 13.0f);
-	ScreenPrint((char*)"4. 게임 종료", float(60 - strlen("1. 게임 시작")), 16.0f);
+	ScreenPrint((char*)"1. 게임 시작", float(75 - strlen("1. 게임 시작")), 20.0f);
+	ScreenPrint((char*)"2. 저장하기", float(75 - strlen("1. 게임 시작")), 23.0f);
+	ScreenPrint((char*)"3. 불러오기", float(75 - strlen("1. 게임 시작")), 26.0f);
+	ScreenPrint((char*)"4. 게임 종료", float(75 - strlen("1. 게임 시작")), 29.0f);
 	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
 }
 
 void SceneMenu(Object* _Player, Object* _Cursor)
 {	
-	// ** [상] 키를 입력받음.
-	if (GetAsyncKeyState(VK_UP) && _Cursor->TransInfo.Position.y > 7.0f)
+	if (GetAsyncKeyState(VK_UP) && _Cursor->TransInfo.Position.y > 20.0f)
 		_Cursor->TransInfo.Position.y -= 3;
 
-	// ** [하] 키를 입력받음.
-	if (GetAsyncKeyState(VK_DOWN) && _Cursor->TransInfo.Position.y < 16.0f)
+	if (GetAsyncKeyState(VK_DOWN) && _Cursor->TransInfo.Position.y < 29.0f)
 		_Cursor->TransInfo.Position.y += 3;
 
 	if (GetAsyncKeyState(VK_RETURN))
 	{
 		switch (int(_Cursor->TransInfo.Position.y))
 		{
-		case 7:
-			Initialize(_Cursor, (char*)"↖", 33.5f, 22.0f);
+		case 20:
+			Initialize(_Cursor, (char*)"↖", 49.0f, 43.0f);
 			SceneState = InfoScene;
 			break;
-		case 10:
+		case 23:
 			break;
-		case 13:
+		case 26:
 			break;
-		case 16:
+		case 29:
 			SceneState = ExitScene;
 			break;
 		}
@@ -462,41 +460,41 @@ void InfoRender(Object* _Player, Object* _Cursor)
 {
 	ScreenClear();
 
-	for (int i = 0; i < 60; ++i)
+	for (int i = 0; i < 75; ++i)
 	{
-		ScreenPrint((char*)"─", float(0 + strlen("─")) * i + 0.5f, 20.0f);
+		ScreenPrint((char*)"─", float(0 + strlen("─")) * i + 0.5f, 40.0f);
 	}
 	/*
 	플레이어 정보
 	*/
-	ScreenPrint((char*)"상점 열기", 25.0f, 21.0f);
-	ScreenPrint((char*)"출격 하기", 55.0f, 21.0f);
-	ScreenPrint((char*)"메뉴 열기", 85.0f, 21.0f);
+	ScreenPrint((char*)"상점 열기", 40.0f, 42.0f);
+	ScreenPrint((char*)"출격 하기", 70.0f, 42.0f);
+	ScreenPrint((char*)"메뉴 열기", 100.0f, 42.0f);
 
 	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
 }
 
 void SceneInfo(Object* _Player, Object* _Cursor)
 {
-	if (GetAsyncKeyState(VK_LEFT) && _Cursor->TransInfo.Position.x > 33.5f)
+	if (GetAsyncKeyState(VK_LEFT) && _Cursor->TransInfo.Position.x > 49.0f)
 		_Cursor->TransInfo.Position.x -= 30.0f;
 
-	if (GetAsyncKeyState(VK_RIGHT) && _Cursor->TransInfo.Position.x < 93.5f)
+	if (GetAsyncKeyState(VK_RIGHT) && _Cursor->TransInfo.Position.x < 109.0f)
 		_Cursor->TransInfo.Position.x += 30.0f;
 
 	if (GetAsyncKeyState(VK_RETURN))
 	{
 		switch (int(_Cursor->TransInfo.Position.x))
 		{
-		case 33:
-			Initialize(_Cursor, (char*)"◁", 60.0f, 15.0f);
+		case 49:
+			Initialize(_Cursor, (char*)"◁", 75.0f, 11.0f);
 			SceneState = ShopScene;
 			break;
-		case 63:
+		case 79:
 			SceneState = MapScene;
 			break;
-		case 93:
-			Initialize(_Cursor, (char*)"◀", 63.0f, 7.0f);
+		case 109:
+			Initialize(_Cursor, (char*)"▶", 63.0f, 20.0f);
 			SceneState = MenuScene;
 			break;
 		}
@@ -508,36 +506,188 @@ void ShopRender(Object* _Player, Object* _Cursor)
 {
 	ScreenClear();
 
-	for (int j = 0; j < 20; ++j)
-	{
-		for (int i = 0; i < 60; ++i)
-		{
-			ScreenPrint((char*)"┌", 20.0f + (float)i, 5.0f + (float)j);
-			if (0 < i < 60)
-				ScreenPrint((char*)"─", 20.0f + (float)i, 5.0f + (float)j);
-			if (i == 59 && j == 0)
-				ScreenPrint((char*)"┐", 21.0f + (float)i, 5.0f + (float)j);
-			if (0 < j < 60)
-				ScreenPrint((char*)"│", 20.0f + (float)i, 5.0f + (float)j);
-			if (1 < i < 59 && 1 < j < 19)
-				ScreenPrint((char*)" ", 20.0f + (float)i, 5.0f + (float)j);
-			if (j == 19)
-				ScreenPrint((char*)"└", 20.0f + (float)i, 5.0f + (float)j);
-			if (j == 19 && i == 59)
-				ScreenPrint((char*)"┘", 20.0f + (float)i, 5.0f + (float)j);
-		}
-	}
+	ScreenPrint((char*)"업그레이드 목록", 50.0f, 3.0f);
 
-	ScreenPrint((char*)"물품 목록", 55.0f, 6.0f);
+	ScreenPrint((char*)"┌────────────────────────────────┐", 20.0f, 7.0f);
+
+	for (int i = 0; i < 44; i++)
+	{
+		ScreenPrint((char*)"│", 20.0f, float(8.0f + i));
+		ScreenPrint((char*)"│", 86.0f, float(8.0f + i));
+	}
+	ScreenPrint((char*)"└────────────────────────────────┘", 20.0f, 52.0f);
+
+	ScreenPrint((char*)"┌───┐", 23.0f, 5.0f);
+	ScreenPrint((char*)"기지", 26.0f, 6.0f);
+	ScreenPrint((char*)"│", 23.0f, 6.0f);
+	ScreenPrint((char*)"│", 31.0f, 6.0f);
+	ScreenPrint((char*)"┌───┐", 33.0f, 6.0f);
+	ScreenPrint((char*)"┌───┐", 43.0f, 6.0f);
+
+	ScreenPrint((char*)"업그레이드 1", 30.0f, 11.0f);
+	ScreenPrint((char*)"업그레이드 2", 30.0f, 14.0f);
+	ScreenPrint((char*)"업그레이드 3", 30.0f, 17.0f);
+	ScreenPrint((char*)"업그레이드 4", 30.0f, 20.0f);
+	ScreenPrint((char*)"업그레이드 5", 30.0f, 23.0f);
+	ScreenPrint((char*)"업그레이드 6", 30.0f, 26.0f);
+	ScreenPrint((char*)"업그레이드 7", 30.0f, 29.0f);
+	ScreenPrint((char*)"업그레이드 8", 30.0f, 32.0f);
+	ScreenPrint((char*)"업그레이드 9", 30.0f, 35.0f);
 
 	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
-
 }
 
+void ShopRender2(Object* _Player, Object* _Cursor)
+{
+	ScreenClear();
+
+	ScreenPrint((char*)"업그레이드 목록", 50.0f, 3.0f);
+
+	ScreenPrint((char*)"┌────────────────────────────────┐", 20.0f, 7.0f);
+
+	for (int i = 0; i < 44; i++)
+	{
+		ScreenPrint((char*)"│", 20.0f, float(8.0f + i));
+		ScreenPrint((char*)"│", 86.0f, float(8.0f + i));
+	}
+	ScreenPrint((char*)"└────────────────────────────────┘", 20.0f, 52.0f);
+
+	ScreenPrint((char*)"┌───┐", 23.0f, 6.0f);
+	ScreenPrint((char*)"┌───┐", 33.0f, 5.0f);
+	ScreenPrint((char*)"기체", 36.0f, 6.0f);
+	ScreenPrint((char*)"│", 33.0f, 6.0f);
+	ScreenPrint((char*)"│", 41.0f, 6.0f);
+	ScreenPrint((char*)"┌───┐", 43.0f, 6.0f);
+
+	ScreenPrint((char*)"업그레이드 1", 30.0f, 11.0f);
+	ScreenPrint((char*)"업그레이드 2", 30.0f, 14.0f);
+	ScreenPrint((char*)"업그레이드 3", 30.0f, 17.0f);
+	ScreenPrint((char*)"업그레이드 4", 30.0f, 20.0f);
+	ScreenPrint((char*)"업그레이드 5", 30.0f, 23.0f);
+	ScreenPrint((char*)"업그레이드 6", 30.0f, 26.0f);
+	ScreenPrint((char*)"업그레이드 7", 30.0f, 29.0f);
+	ScreenPrint((char*)"업그레이드 8", 30.0f, 32.0f);
+	ScreenPrint((char*)"업그레이드 9", 30.0f, 35.0f);
+
+	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
+}
+
+void ShopRender3(Object* _Player, Object* _Cursor)
+{
+	ScreenClear();
+
+	ScreenPrint((char*)"업그레이드 목록", 50.0f, 3.0f);
+
+	ScreenPrint((char*)"┌────────────────────────────────┐", 20.0f, 7.0f);
+
+	for (int i = 0; i < 44; i++)
+	{
+		ScreenPrint((char*)"│", 20.0f, float(8.0f + i));
+		ScreenPrint((char*)"│", 86.0f, float(8.0f + i));
+	}
+	ScreenPrint((char*)"└────────────────────────────────┘", 20.0f, 52.0f);
+
+	ScreenPrint((char*)"┌───┐", 23.0f, 6.0f);
+	ScreenPrint((char*)"┌───┐", 33.0f, 6.0f);
+	ScreenPrint((char*)"┌────┐", 43.0f, 5.0f);
+	ScreenPrint((char*)"파일럿", 46.5f, 6.0f);
+	ScreenPrint((char*)"│", 43.0f, 6.0f);
+	ScreenPrint((char*)"│", 53.0f, 6.0f);
+
+	ScreenPrint((char*)"업그레이드 1", 30.0f, 11.0f);
+	ScreenPrint((char*)"업그레이드 2", 30.0f, 14.0f);
+	ScreenPrint((char*)"업그레이드 3", 30.0f, 17.0f);
+	ScreenPrint((char*)"업그레이드 4", 30.0f, 20.0f);
+	ScreenPrint((char*)"업그레이드 5", 30.0f, 23.0f);
+	ScreenPrint((char*)"업그레이드 6", 30.0f, 26.0f);
+	ScreenPrint((char*)"업그레이드 7", 30.0f, 29.0f);
+	ScreenPrint((char*)"업그레이드 8", 30.0f, 32.0f);
+	ScreenPrint((char*)"업그레이드 9", 30.0f, 35.0f);
+
+	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
+}
+
+void ShopRender4(Object* _Player, Object* _Cursor)
+{
+	ScreenClear();
+
+	ScreenPrint((char*)"업그레이드 목록", 50.0f, 3.0f);
+
+	ScreenPrint((char*)"┌────────────────────────────────┐", 20.0f, 7.0f);
+
+	for (int i = 0; i < 44; i++)
+	{
+		ScreenPrint((char*)"│", 20.0f, float(8.0f + i));
+		ScreenPrint((char*)"│", 86.0f, float(8.0f + i));
+	}
+	ScreenPrint((char*)"└────────────────────────────────┘", 20.0f, 52.0f);
+
+	ScreenPrint((char*)"┌───┐", 23.0f, 6.0f);
+	ScreenPrint((char*)"┌───┐", 33.0f, 6.0f);
+	ScreenPrint((char*)"┌────┐", 43.0f, 5.0f);
+	ScreenPrint((char*)"파일럿", 46.5f, 6.0f);
+	ScreenPrint((char*)"│", 43.0f, 6.0f);
+	ScreenPrint((char*)"│", 53.0f, 6.0f);
+
+	ScreenPrint((char*)"업그레이드 1", 30.0f, 11.0f);
+	ScreenPrint((char*)"업그레이드 2", 30.0f, 14.0f);
+	ScreenPrint((char*)"업그레이드 3", 30.0f, 17.0f);
+	ScreenPrint((char*)"업그레이드 4", 30.0f, 20.0f);
+	ScreenPrint((char*)"업그레이드 5", 30.0f, 23.0f);
+	ScreenPrint((char*)"업그레이드 6", 30.0f, 26.0f);
+	ScreenPrint((char*)"업그레이드 7", 30.0f, 29.0f);
+	ScreenPrint((char*)"업그레이드 8", 30.0f, 32.0f);
+	ScreenPrint((char*)"업그레이드 9", 30.0f, 35.0f);
+
+	ScreenPrint((char*)"종료", 120.0f, 50.0f);
+
+	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
+}
 void SceneShop(Object* _Player, Object* _Cursor)
 {
+	if (GetAsyncKeyState(VK_UP) && _Cursor->TransInfo.Position.y > 11.0f)
+		_Cursor->TransInfo.Position.y -= 3;
 
-	ShopRender(_Player, _Cursor);
+	if (GetAsyncKeyState(VK_DOWN) && _Cursor->TransInfo.Position.y < 35.0f)
+		_Cursor->TransInfo.Position.y += 3;
+
+	if (GetAsyncKeyState(VK_RIGHT) && ShopMode != 3)	
+		++ShopMode;
+
+	if (GetAsyncKeyState(VK_LEFT) && ShopMode != 0)
+	{
+		if (ShopMode == 3)
+		{
+			Initialize(_Cursor, (char*)"◁", 75.0f, 11.0f);
+			--ShopMode;
+		}
+		else
+			--ShopMode;
+	}
+
+	switch (ShopMode)
+	{
+	case 0:
+		ShopRender(_Player, _Cursor);
+		break;
+	case 1:
+		ShopRender2(_Player, _Cursor);
+		break;
+	case 2:
+		ShopRender3(_Player, _Cursor);
+		break;
+	case 3:
+		Initialize(_Cursor, (char*)"◁", 124.0f, 50.0f);
+		ShopRender4(_Player, _Cursor);
+		break;
+	}
+
+	if (GetAsyncKeyState(VK_RETURN) && ShopMode == 3)
+	{
+		Initialize(_Cursor, (char*)"▶", 63.0f, 20.0f);
+		SceneState = MenuScene;
+	}
+
 }
 
 void MapRender(Object* _Player, Object* _Cursor)
@@ -586,34 +736,76 @@ void SceneMap(Object* _Player, Object* _Cursor)
 
 void LoadRender(Object* _Player, Object* _Cursor)
 {
-	int LoadCount = 20;
-	int Loading = 0;
-	while (LoadCount)
-	{
-		ScreenClear();
-		if (_Player->Time + 200 < GetTickCount64())
-		{
-			_Player->Time = GetTickCount64();
-			ScreenPrint((char*)"출격중...", 44.0f, 25.0f);
+	ScreenClear();
+	ScreenPrint((char*)"출격중", 64.0f, 25.0f);
 
-			--LoadCount;
-			++Loading;
+	ScreenPrint((char*)"▷", 56.0f, 40.0f);
+}
 
-			for (int i = 0; i < 10; ++i)
-			{
-				ScreenPrint((char*)"▷", 2.0f + (float)Loading, 58.0f);
-				if (Loading == 10)
-					Loading = 0;
+void LoadRender1(Object* _Player, Object* _Cursor)
+{
+	ScreenClear();
+	ScreenPrint((char*)"출격중.", 64.0f, 25.0f);
 
-			}
-		}
-	}
+	ScreenPrint((char*)"▷", 60.0f, 40.0f);
+}
+
+void LoadRender2(Object* _Player, Object* _Cursor)
+{
+	ScreenClear();
+	ScreenPrint((char*)"출격중..", 64.0f, 25.0f);
+
+	ScreenPrint((char*)"▷", 64.0f, 40.0f);
+}
+
+void LoadRender3(Object* _Player, Object* _Cursor)
+{
+	ScreenClear();
+	ScreenPrint((char*)"출격중...", 64.0f, 25.0f);
+
+	ScreenPrint((char*)"▷", 68.0f, 40.0f);
+}
+
+void LoadRender4(Object* _Player, Object* _Cursor)
+{
+	ScreenClear();
+	ScreenPrint((char*)"출격중", 64.0f, 25.0f);
+
+	ScreenPrint((char*)"▷", 72.0f, 40.0f);
 }
 
 void SceneLoad(Object* _Player, Object* _Cursor)
 {
-	LoadRender(_Player, _Cursor);
-	SceneBattle(_Player, _Cursor);
+	if (_Player->Time + 200 < GetTickCount64())
+	{
+		_Player->Time = GetTickCount64();
+		--LoadCount;
+		++Loading;
+		if (Loading == 10)
+			Loading = 0;
+	}
+	if (LoadCount==0)
+		SceneMenu(_Player, _Cursor);
+
+	switch (Loading % 5)
+	{
+	case 0:
+		LoadRender(_Player, _Cursor);
+		break;
+	case 1:
+		LoadRender1(_Player, _Cursor);
+		break;
+	case 2:
+		LoadRender2(_Player, _Cursor);
+		break;
+	case 3:
+		LoadRender3(_Player, _Cursor);
+		break;
+	case 4:
+		LoadRender4(_Player, _Cursor);
+		break;
+
+	}
 }
 
 DrawTextInfo BackGroundInitialize(int _i)

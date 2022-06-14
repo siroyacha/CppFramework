@@ -1,4 +1,4 @@
-// ** Framework v0.8.6.7
+// ** Framework v0.8.6.8
 #include"Headers.h"
 
 // ** 충돌, 거리 구하기 필수로 넣기
@@ -9,8 +9,7 @@ int main(void)
 
 	// ** 커서를 안보이게 만들어줌.
 	HideCursor(false);
-	
-	
+
 	system("mode con:cols=150 lines=60");
 
 	// ** 플레이어 선언 및 동적할당.
@@ -21,7 +20,7 @@ int main(void)
 
 	Object* Cursor = new Object;
 
-	Initialize(Cursor, (char*)"◀", 63.0f, 7.0f);
+	Initialize(Cursor, (char*)"▶", 63.0f, 20.0f);
 
 	ScreenLint();
 
@@ -46,7 +45,6 @@ int main(void)
 	delete Player;
 	delete Cursor;			
 
-	Release();
 	ScreenRelease();
 
 	return 0;
