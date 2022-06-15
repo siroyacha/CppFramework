@@ -18,6 +18,34 @@ int ShopMode = 0;
 int LoadCount = 10;
 int Loading = 0;
 
+
+Object* Enemy[32] = { nullptr };
+
+ULONGLONG EnemyTime = GetTickCount64();
+
+Object* EnemyBullet[128] = { nullptr };
+
+Vector3 EnemyBulletDirection[128];
+
+Object* Item[32] = { nullptr };
+
+Object* Boss[4] = { nullptr };
+
+int Score = 0;
+
+Object* Bullet[128] = { nullptr };
+Object* BossBullet[128] = { nullptr };
+
+Vector3 BossBulletDirection[128];
+Vector3 ItemDirection[32];
+
+bool Check = false;
+
+int Countdown = 150;
+
+bool crash = false;
+bool crash2 = false;
+
 // ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
 void Initialize(Object* _Object, char* _Texture, float _PosX = 0.0f, float _PosY = 0.0f, float _PosZ = 0.0f, int _Hp = 1, int _Boom = 0, int _Mode = 1);
 
@@ -69,6 +97,8 @@ void ScreenRelease();
 
 void ScreenPrint(const char* _Texture, const float _x, const float _y, const int _Color = 15);
 
+void ScreenPrint(const int _Value, const float _x, const float _y, const int _Color = 15);
+
 void SceneManager(Object* _Player, Object* _Cursor);
 
 void LogoRender();
@@ -107,9 +137,16 @@ void LoadRender3(Object* _Player, Object* _Cursor);
 
 void LoadRender4(Object* _Player, Object* _Cursor);
 
+void LoadRender5(Object* _Player, Object* _Cursor);
+
 void SceneLoad(Object* _Player, Object* _Cursor);
 
 DrawTextInfo BackGroundInitialize(int _i);
+
+void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
+	Object* _Enemy[], Object* _Item[], Object* _Boss[],
+	Object* _Bullet[], Object* _EnemyBullet[], Object* _BossBullet[],
+	int _Countdown, int _Score);
 
 void SceneBattle(Object* _Player, Object* _Cursorr);
 
@@ -366,6 +403,17 @@ void ScreenPrint(const char* _Texture, const float _x, const float _y, const int
 	WriteFile(g_hScreen[g_nScreenindex], _Texture, strlen(_Texture), &dw, NULL);
 }
 
+void ScreenPrint(const int _Value, const float _x, const float _y, const int _Color)
+{
+	DWORD dw;
+	COORD CursorPosition = { _x,_y };
+	char* pText = new char[4];
+	SetConsoleCursorPosition(g_hScreen[g_nScreenindex], CursorPosition);
+	SetConsoleTextAttribute(g_hScreen[g_nScreenindex], _Color);
+	WriteFile(g_hScreen[g_nScreenindex], _itoa(_Value, pText, 10),
+		strlen(_itoa(_Value, pText, 10)), &dw, NULL);
+}
+
 void SceneManager(Object* _Player, Object* _Cursor)
 {
 	ScreenFlipping();
@@ -387,8 +435,11 @@ void SceneManager(Object* _Player, Object* _Cursor)
 	case MapScene:
 		SceneMap(_Player, _Cursor);
 		break;
-	case BattleScene:
+	case LoadScene:
 		SceneLoad(_Player, _Cursor);
+		break;
+	case BattleScene:
+		SceneBattle(_Player, _Cursor);
 		break;
 	case ExitScene:
 		exit(NULL);
@@ -460,13 +511,14 @@ void InfoRender(Object* _Player, Object* _Cursor)
 {
 	ScreenClear();
 
+	/*
+	플레이어 정보
+	*/
+
 	for (int i = 0; i < 75; ++i)
 	{
 		ScreenPrint((char*)"─", float(0 + strlen("─")) * i + 0.5f, 40.0f);
 	}
-	/*
-	플레이어 정보
-	*/
 	ScreenPrint((char*)"상점 열기", 40.0f, 42.0f);
 	ScreenPrint((char*)"출격 하기", 70.0f, 42.0f);
 	ScreenPrint((char*)"메뉴 열기", 100.0f, 42.0f);
@@ -488,6 +540,7 @@ void SceneInfo(Object* _Player, Object* _Cursor)
 		{
 		case 49:
 			Initialize(_Cursor, (char*)"◁", 75.0f, 11.0f);
+			ShopMode = 0;
 			SceneState = ShopScene;
 			break;
 		case 79:
@@ -684,8 +737,8 @@ void SceneShop(Object* _Player, Object* _Cursor)
 
 	if (GetAsyncKeyState(VK_RETURN) && ShopMode == 3)
 	{
-		Initialize(_Cursor, (char*)"▶", 63.0f, 20.0f);
-		SceneState = MenuScene;
+		Initialize(_Cursor, (char*)"↖", 49.0f, 43.0f);
+		SceneState = InfoScene;
 	}
 
 }
@@ -731,47 +784,55 @@ void SceneMap(Object* _Player, Object* _Cursor)
 {
 	MapRender(_Player, _Cursor);
 	if (GetAsyncKeyState(VK_SPACE))
-		SceneState = BattleScene;
+		SceneState = LoadScene;
 }
 
 void LoadRender(Object* _Player, Object* _Cursor)
 {
 	ScreenClear();
-	ScreenPrint((char*)"출격중", 64.0f, 25.0f);
+	ScreenPrint((char*)"출격중", 74.0f, 25.0f);
 
-	ScreenPrint((char*)"▷", 56.0f, 40.0f);
+	ScreenPrint((char*)"▷", 66.0f, 40.0f);
 }
 
 void LoadRender1(Object* _Player, Object* _Cursor)
 {
 	ScreenClear();
-	ScreenPrint((char*)"출격중.", 64.0f, 25.0f);
+	ScreenPrint((char*)"출격중.", 74.0f, 25.0f);
 
-	ScreenPrint((char*)"▷", 60.0f, 40.0f);
+	ScreenPrint((char*)"▷", 70.0f, 40.0f);
 }
 
 void LoadRender2(Object* _Player, Object* _Cursor)
 {
 	ScreenClear();
-	ScreenPrint((char*)"출격중..", 64.0f, 25.0f);
+	ScreenPrint((char*)"출격중..", 74.0f, 25.0f);
 
-	ScreenPrint((char*)"▷", 64.0f, 40.0f);
+	ScreenPrint((char*)"▷", 74.0f, 40.0f);
 }
 
 void LoadRender3(Object* _Player, Object* _Cursor)
 {
 	ScreenClear();
-	ScreenPrint((char*)"출격중...", 64.0f, 25.0f);
+	ScreenPrint((char*)"출격중...", 74.0f, 25.0f);
 
-	ScreenPrint((char*)"▷", 68.0f, 40.0f);
+	ScreenPrint((char*)"▷", 78.0f, 40.0f);
 }
 
 void LoadRender4(Object* _Player, Object* _Cursor)
 {
 	ScreenClear();
-	ScreenPrint((char*)"출격중", 64.0f, 25.0f);
+	ScreenPrint((char*)"출격중", 74.0f, 25.0f);
 
-	ScreenPrint((char*)"▷", 72.0f, 40.0f);
+	ScreenPrint((char*)"▷", 82.0f, 40.0f);
+}
+
+void LoadRender5(Object* _Player, Object* _Cursor)
+{
+	ScreenClear();
+	ScreenPrint((char*)"출격중", 74.0f, 25.0f);
+
+	ScreenPrint((char*)"▷", 86.0f, 40.0f);
 }
 
 void SceneLoad(Object* _Player, Object* _Cursor)
@@ -781,13 +842,13 @@ void SceneLoad(Object* _Player, Object* _Cursor)
 		_Player->Time = GetTickCount64();
 		--LoadCount;
 		++Loading;
-		if (Loading == 10)
+		if (Loading == 6)
 			Loading = 0;
 	}
-	if (LoadCount==0)
-		SceneMenu(_Player, _Cursor);
+	if (LoadCount == 0)
+		SceneState = BattleScene;
 
-	switch (Loading % 5)
+	switch (Loading)
 	{
 	case 0:
 		LoadRender(_Player, _Cursor);
@@ -804,7 +865,9 @@ void SceneLoad(Object* _Player, Object* _Cursor)
 	case 4:
 		LoadRender4(_Player, _Cursor);
 		break;
-
+	case 5:
+		LoadRender5(_Player, _Cursor);
+		break;
 	}
 }
 
@@ -836,6 +899,109 @@ DrawTextInfo BackGroundInitialize(int _i)
 	return BackGround;
 }
 
+void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
+	Object* _Enemy[], Object* _Item[], Object* _Boss[],
+	Object* _Bullet[], Object* _EnemyBullet[], Object* _BossBullet[],
+	int _Countdown, int _Score)
+{
+	ScreenClear();
+
+	// ** 배경 출력
+	for (int i = 0; i < 30; ++i)
+	{
+		ScreenPrint(
+			_BackGround[i].Info.Texture,
+			_BackGround[i].TransInfo.Position.x,
+			_BackGround[i].TransInfo.Position.y,
+			_BackGround[i].Info.Color);
+	}
+
+	for (int i = 0; i < 32; ++i)
+	{
+		if (_Enemy[i] != nullptr)
+		{
+			ScreenPrint(_Enemy[i]->Info.Texture,
+				_Enemy[i]->TransInfo.Position.x,
+				_Enemy[i]->TransInfo.Position.y,
+				12);
+		}
+	}
+
+	for (int i = 0; i < 128; ++i)
+	{
+		if (_EnemyBullet[i] != nullptr)
+		{
+			ScreenPrint(_EnemyBullet[i]->Info.Texture,
+				_EnemyBullet[i]->TransInfo.Position.x,
+				_EnemyBullet[i]->TransInfo.Position.y);
+		}
+	}
+	for (int i = 0; i < 128; ++i)
+	{
+		if (_Bullet[i] != nullptr)
+		{
+			ScreenPrint(_Bullet[i]->Info.Texture,
+				_Bullet[i]->TransInfo.Position.x,
+				_Bullet[i]->TransInfo.Position.y);
+		}
+	}
+
+	if (_Boss[0]!= nullptr)
+	{
+		for (int i = 0; i < 128; ++i)
+		{
+			if (_BossBullet[i] != nullptr)
+			{
+				ScreenPrint(_BossBullet[i]->Info.Texture,
+					_BossBullet[i]->TransInfo.Position.x,
+					_BossBullet[i]->TransInfo.Position.y);
+			}
+		}
+
+		ScreenPrint((char*)"[", 10.0f, 4.0f, 3);
+		ScreenPrint((char*)"]", 12.0f + _Boss[0]->Hp, 4.0f, 3);
+
+		for (int i = 0; i < _Boss[0]->Hp; ++i)
+		{
+			ScreenPrint((char*)"/", 11.0f + i, 4.0f, 12);
+		}
+
+		ScreenPrint(_Boss[0]->Info.Texture, _Boss[0]->TransInfo.Position.x - 3.0f, _Boss[0]->TransInfo.Position.y - 1.0f, 11);
+		ScreenPrint(_Boss[0]->Info.Texture, _Boss[0]->TransInfo.Position.x - 3.0f, _Boss[0]->TransInfo.Position.y, 11);
+		ScreenPrint(_Boss[0]->Info.Texture, _Boss[0]->TransInfo.Position.x - 3.0f, _Boss[0]->TransInfo.Position.y + 1.0f, 11);
+		ScreenPrint(_Boss[0]->Info.Texture, _Boss[0]->TransInfo.Position.x - 3.0f, _Boss[0]->TransInfo.Position.y + 2.0f, 11);
+	}
+
+	for (int i = 0; i < 32; i++)
+	{
+
+		if (_Item[i]!= nullptr)
+		{
+			ScreenPrint(_Item[i]->Info.Texture, _Item[i]->TransInfo.Position.x, _Item[i]->TransInfo.Position.y, 13);
+		}
+	}
+
+	ScreenPrint(_Player->Info.Texture,
+		_Player->TransInfo.Position.x,
+		_Player->TransInfo.Position.y,
+		10);
+
+	ScreenPrint((char*)"남은 시간 : ", float(60 - strlen("남은 시간 : ")), 1.0f);
+	ScreenPrint(_Countdown, 60.0f, 1.0f);
+
+	ScreenPrint((char*)"Score : ", float(60 - strlen("Score : ")), 2.0f);
+	ScreenPrint(_Score, 60.0f, 2.0f);
+
+	for (int i = 0; i < _Player->Hp; ++i)
+	{
+		ScreenPrint(_Player->Info.Texture, (2.0f * i) + 0.5f, 59.0f);
+	}
+	for (int i = 0; i < _Player->Boom; ++i)
+	{
+		ScreenPrint((char*)"Boom", (4.0f * i) + 0.5f, 58.0f);
+	}
+}
+
 void SceneBattle(Object* _Player, Object* _Cursor)
 {
 	DrawTextInfo BackGround[30];
@@ -844,395 +1010,108 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 		BackGround[i] = BackGroundInitialize(i);
 	}
 
-	// ** Enemy선언 및 동적할당.
-	Object* Enemy[32];	// = new Object;
-
-	for (int i = 0; i < 32; ++i)
-		Enemy[i] = nullptr;
-
-	ULONGLONG EnemyTime = GetTickCount64();
-
-	Object* EnemyBullet[128] = { nullptr };
-
-	Vector3 EnemyBulletDirection[128];
-
-	Object* Item[32];
-
-	for (int i = 0; i < 32; ++i)
-		Item[i] = nullptr;
-
-	Object* Boss[4];
-
-	for (int i = 0; i < 4; ++i)
-		Boss[i] = nullptr;
-
-	int Score = 0;
-
-	Object* Bullet[128] = { nullptr };
-	Object* BossBullet[128] = { nullptr };
-
-	Vector3 BossBulletDirection[128];
-	Vector3 ItemDirection[32];
-
-	bool Check = false;
-
-	int Countdown = 150;
-
-	bool crash = false;
-	bool crash2 = false;
-
 	int BattleHelper = 1;
 
-	while (BattleHelper)
+	if (EnemyTime + 1500 < GetTickCount64())
 	{
-		if (_Cursor->Time + 80 < GetTickCount64())
+		EnemyTime = GetTickCount64();
+
+		for (int i = 0; i < 32; ++i)
 		{
-			_Cursor->Time = GetTickCount64();
-			system("cls");
-			// ** 배경 출력
-			for (int i = 0; i < 30; ++i)
+			if (Enemy[i] == nullptr)
 			{
-				OnDrawText(
-					BackGround[i].Info.Texture,
-					BackGround[i].TransInfo.Position.x,
-					BackGround[i].TransInfo.Position.y,
-					BackGround[i].Info.Color);
+				srand((GetTickCount64() + i * i) * GetTickCount64());
+
+				Enemy[i] = CreatEnemy(float(rand() % 100), 1.0f);
+
+				break;
 			}
 
-			if (EnemyTime + 1500 < GetTickCount64())
+			for (int j = 0; j < 128; ++j)
 			{
-				EnemyTime = GetTickCount64();
-
-				for (int i = 0; i < 32; ++i)
+				if (EnemyBullet[j] == nullptr && (Enemy[i]->Time + ((rand() % 15) * 100)) < GetTickCount64())
 				{
-					if (Enemy[i] == nullptr)
+					EnemyBullet[j] = CreatBullet(
+						Enemy[i]->TransInfo.Position.x,
+						Enemy[i]->TransInfo.Position.y + 1.0f);
+
+					EnemyBulletDirection[j] = GetDirection(_Player, Enemy[i]);
+					Enemy[i]->Time = GetTickCount64();
+
+					break;
+				}
+			}
+		}
+	}
+
+	if (Countdown == 120)
+	{
+		for (int i = 0; i < 4; ++i)
+			Boss[i] = CreatBoss(50.0f, 10.0f, 5.0f, 100 * (i + 1));;
+	}
+	if (Boss[0])
+	{
+		for (int i = 0; i < 128; ++i)
+		{
+			if (BossBullet[i] == nullptr && Boss[0]->Time + 1000 < GetTickCount64())
+			{
+				BossBullet[i] = CreatBullet(
+					Boss[0]->TransInfo.Position.x + (float)(rand() % 6),
+					Boss[0]->TransInfo.Position.y + 2.0f);
+
+				BossBulletDirection[i] = GetDirection(_Player, Boss[0]);
+				Boss[0]->Time = GetTickCount64();
+
+				break;
+			}
+		}
+	}
+
+	for (int i = 0; i < 128; ++i)
+	{
+		if (Bullet[i] != nullptr)
+		{
+			for (int j = 0; j < 32; ++j)
+			{
+				if (Enemy[j] != nullptr)
+				{
+
+					if (Collision(Bullet[i], Enemy[j]))
 					{
-						srand((GetTickCount() + i * i) * GetTickCount());
+						Enemy[j]->Hp = Enemy[j]->Hp - Bullet[i]->Hp;
+						delete Bullet[i];
+						Bullet[i] = nullptr;
 
-						Enemy[i] = CreatEnemy(float(rand() % 100), 1.0f);
-
-						break;
-					}
-
-					for (int j = 0; j < 128; ++j)
-					{
-						if (EnemyBullet[j] == nullptr && (Enemy[i]->Time + ((rand() % 15) * 100)) < GetTickCount64())
+						if (Enemy[j]->Hp <= 0)
 						{
-							EnemyBullet[j] = CreatBullet(
-								Enemy[i]->TransInfo.Position.x,
-								Enemy[i]->TransInfo.Position.y + 1.0f);
-
-							EnemyBulletDirection[j] = GetDirection(_Player, Enemy[i]);
-							Enemy[i]->Time = GetTickCount64();
-
-							break;
+							if (Item[j] == nullptr)
+							{
+								Item[j] = CreatItem(Enemy[j]->TransInfo.Position.x,
+									Enemy[j]->TransInfo.Position.y, Enemy[j]->Mode);
+								ItemDirection[j] = GetDirection(_Player, Item[j]);
+							}
 						}
-					}
-				}
-			}
 
-			if (Countdown == 120)
-			{
-				for (int i = 0; i < 4; ++i)
-					Boss[i] = CreatBoss(50.0f, 10.0f, 5.0f, 100 * (i + 1));;
-			}
-			if (Boss[0])
-			{
-				for (int i = 0; i < 128; ++i)
-				{
-					if (BossBullet[i] == nullptr && Boss[0]->Time + 1000 < GetTickCount64())
-					{
-						BossBullet[i] = CreatBullet(
-							Boss[0]->TransInfo.Position.x + (float)(rand() % 6),
-							Boss[0]->TransInfo.Position.y + 2.0f);
+						delete Enemy[j];
+						Enemy[j] = nullptr;
 
-						BossBulletDirection[i] = GetDirection(_Player, Boss[0]);
-						Boss[0]->Time = GetTickCount64();
+						++Score;
 
 						break;
 					}
 				}
+
 			}
 
-			for (int i = 0; i < 128; ++i)
-			{
+			if (Boss[0] != nullptr)
 				if (Bullet[i] != nullptr)
 				{
-					for (int j = 0; j < 32; ++j)
+					if (Collision(Bullet[i], Boss[0]))
 					{
-						if (Enemy[j] != nullptr)
-						{
-							if (Collision(Bullet[i], Enemy[j]))
-							{
-								Enemy[j]->Hp = Enemy[j]->Hp - Bullet[i]->Hp;
-								delete Bullet[i];
-								Bullet[i] = nullptr;
+						delete Bullet[i];
+						Bullet[i] = nullptr;
 
-								if (Enemy[j]->Hp <= 0)
-								{
-									if (Item[j] == nullptr)
-									{
-										Item[j] = CreatItem(Enemy[j]->TransInfo.Position.x,
-											Enemy[j]->TransInfo.Position.y, Enemy[j]->Mode);
-										ItemDirection[j] = GetDirection(_Player, Item[j]);
-									}
-								}
-
-								delete Enemy[j];
-								Enemy[j] = nullptr;
-
-								++Score;
-
-								break;
-							}
-						}
-					}
-
-					if (Boss[0] != nullptr)
-						if (Bullet[i] != nullptr)
-						{
-							if (Collision(Bullet[i], Boss[0]))
-							{
-								delete Bullet[i];
-								Bullet[i] = nullptr;
-
-								--Boss[0]->Hp;
-								if (Boss[0]->Hp <= 0)
-								{
-									delete Boss[0];
-									Boss[0] = nullptr;
-
-									system("cls");
-									OnDrawText((char*)"클리어!!", 50, 30, 10);
-
-									system("mode con:cols=120 lines=30");
-									Initialize(_Cursor, (char*)"◀", 63.0f, 7.0f);
-									SceneState = MenuScene;
-									BattleHelper = 0;
-								}
-								break;
-							}
-						}
-
-					if (Bullet[i] != nullptr)
-						if (Bullet[i]->TransInfo.Position.y < 0)
-						{
-							delete Bullet[i];
-							Bullet[i] = nullptr;
-						}
-				}
-
-				if (EnemyBullet[i] != nullptr)
-				{
-					if (Collision(EnemyBullet[i], _Player))
-					{
-						delete EnemyBullet[i];
-						EnemyBullet[i] = nullptr;
-
-						--_Player->Hp;
-
-						if (_Player->Hp == 0)
-						{
-							system("mode con:cols=120 lines=30");
-							Initialize(_Cursor, (char*)"◀", 63.0f, 7.0f);
-							SceneState = MenuScene;
-							BattleHelper = 0;
-						}
-						break;
-					}
-
-					if (EnemyBullet[i] != nullptr)
-						if (EnemyBullet[i]->TransInfo.Position.y >= 50 || EnemyBullet[i]->TransInfo.Position.y <= 0 ||
-							EnemyBullet[i]->TransInfo.Position.x >= 98 || EnemyBullet[i]->TransInfo.Position.x < 0)
-						{
-							delete EnemyBullet[i];
-							EnemyBullet[i] = nullptr;
-						}
-				}
-
-				if (BossBullet[i] != nullptr)
-				{
-					if (Collision(BossBullet[i], _Player))
-					{
-						delete BossBullet[i];
-						BossBullet[i] = nullptr;
-
-						--_Player->Hp;
-
-						if (_Player->Hp == 0)
-						{
-							system("mode con:cols=120 lines=30");
-							Initialize(_Cursor, (char*)"◀", 63.0f, 7.0f);
-							SceneState = MenuScene;
-							BattleHelper = 0;
-						}
-
-						break;
-					}
-
-					if (BossBullet[i] != nullptr)
-						if (BossBullet[i]->TransInfo.Position.y >= 50 || BossBullet[i]->TransInfo.Position.y <= 0 ||
-							BossBullet[i]->TransInfo.Position.x >= 98 || BossBullet[i]->TransInfo.Position.x < 0)
-						{
-							delete BossBullet[i];
-							BossBullet[i] = nullptr;
-						}
-				}
-			}
-
-			for (int i = 0; i < 32; ++i)
-			{
-				if (Item[i] != nullptr)
-				{
-					if (Collision(Item[i], _Player))
-					{
-						if (Item[i]->Info.Texture == (char*)"Boom")
-						{
-							if (_Player->Boom < 3)
-								++_Player->Boom;
-						}
-						if (Item[i]->Info.Texture == (char*)"Power")
-						{
-							if (_Player->Mode < 3)
-								++_Player->Mode;
-						}
-						if (Item[i]->Info.Texture == (char*)"옷/")
-						{
-							if (_Player->Hp < 3)
-								++_Player->Hp;
-						}
-						delete Item[i];
-						Item[i] = nullptr;
-
-						crash = false;
-						crash2 = false;
-					}
-					if (Item[i] != nullptr)
-					{
-						if (Item[i]->TransInfo.Position.y > 60 || Item[i]->TransInfo.Position.y < 0 ||
-							Item[i]->TransInfo.Position.x > 100 || Item[i]->TransInfo.Position.x < 0)
-						{
-							delete Item[i];
-							Item[i] = nullptr;
-
-							crash = false;
-							crash2 = false;
-						}
-					}
-				}
-			}
-
-			UpdateInput(_Player);
-
-			if (GetAsyncKeyState(VK_SPACE))
-			{
-				switch (_Player->Mode)
-				{
-				case 1:
-
-					for (int i = 0; i < 128; ++i)
-					{
-						if (Bullet[i] == nullptr)
-						{
-							Bullet[i] = CreatBullet(
-								_Player->TransInfo.Position.x,
-								_Player->TransInfo.Position.y - 1.0f);
-
-							break;
-						}
-					}
-					break;
-				case 2:
-
-					for (int i = 0; i < 64; ++i)
-					{
-						if (Bullet[i] == nullptr && Bullet[i + 1] == nullptr)
-						{
-							Bullet[i] = CreatBullet(
-								_Player->TransInfo.Position.x - 1.0f,
-								_Player->TransInfo.Position.y - 1.0f);
-							Bullet[i + 1] = CreatBullet(
-								_Player->TransInfo.Position.x + 1.0f,
-								_Player->TransInfo.Position.y - 1.0f);
-							break;
-						}
-					}
-					break;
-				case 3:
-					for (int i = 0; i < 32; ++i)
-					{
-						if (Bullet[i] == nullptr && Bullet[i + 1] == nullptr &&
-							Bullet[i + 2] == nullptr && Bullet[i + 3] == nullptr)
-						{
-							Bullet[i] = CreatBullet(
-								_Player->TransInfo.Position.x - 1.0f,
-								_Player->TransInfo.Position.y + 2.0f);
-							Bullet[i + 1] = CreatBullet(
-								_Player->TransInfo.Position.x + 1.0f,
-								_Player->TransInfo.Position.y + 2.0f);
-							Bullet[i + 2] = CreatBullet(
-								_Player->TransInfo.Position.x - 3.0f,
-								_Player->TransInfo.Position.y + 2.0f);
-							Bullet[i + 3] = CreatBullet(
-								_Player->TransInfo.Position.x + 3.0f,
-								_Player->TransInfo.Position.y + 2.0f);
-							break;
-						}
-					}
-					break;
-				}
-			}
-
-			if (_Player->Boom)
-			{
-				if (!Check && GetAsyncKeyState(0x58) & 0x0001)
-				{
-					Check = true;
-				}
-
-				if (Check && !(GetAsyncKeyState(0x58) & 0x8000))
-				{
-
-					for (int i = 0; i < 32; ++i)
-					{
-						if (Enemy[i])
-						{
-							if (Item[i] == nullptr)
-							{
-								Item[i] = CreatItem(Enemy[i]->TransInfo.Position.x,
-									Enemy[i]->TransInfo.Position.y, Enemy[i]->Mode);
-								ItemDirection[i] = GetDirection(_Player, Item[i]);
-							}
-
-							delete Enemy[i];
-							Enemy[i] = nullptr;
-							++Score;
-						}
-					}
-
-					for (int i = 0; i < 128; ++i)
-					{
-						if (EnemyBullet[i])
-						{
-							delete EnemyBullet[i];
-							EnemyBullet[i] = nullptr;
-						}
-					}
-
-					for (int i = 0; i < 128; ++i)
-					{
-						if (BossBullet[i])
-						{
-							delete BossBullet[i];
-							BossBullet[i] = nullptr;
-
-						}
-					}
-
-					if (Boss[0])
-					{
-						Boss[0]->Hp -= 10;
-
+						--Boss[0]->Hp;
 						if (Boss[0]->Hp <= 0)
 						{
 							delete Boss[0];
@@ -1241,47 +1120,209 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 							system("cls");
 							OnDrawText((char*)"클리어!!", 50, 30, 10);
 
+							Initialize(_Cursor, (char*)"◀", 63.0f, 7.0f);
 							SceneState = MenuScene;
 						}
+						break;
 					}
-
-					--_Player->Boom;
-					Check = false;
 				}
+
+			if (Bullet[i] != nullptr)
+				if (Bullet[i]->TransInfo.Position.y < 0)
+				{
+					delete Bullet[i];
+					Bullet[i] = nullptr;
+				}
+		}
+
+		if (EnemyBullet[i] != nullptr)
+		{
+			if (Collision(EnemyBullet[i], _Player))
+			{
+				delete EnemyBullet[i];
+				EnemyBullet[i] = nullptr;
+
+				--_Player->Hp;
+
+				if (_Player->Hp == 0)
+				{
+					Initialize(_Cursor, (char*)"◀", 63.0f, 7.0f);
+					SceneState = MenuScene;
+					BattleHelper = 0;
+				}
+				break;
 			}
 
-			OnDrawText(_Player->Info.Texture,
-				_Player->TransInfo.Position.x,
-				_Player->TransInfo.Position.y,
-				10);
-
-			for (int i = 0; i < 32; i++)
-			{
-				if (Item[i])
+			if (EnemyBullet[i] != nullptr)
+				if (EnemyBullet[i]->TransInfo.Position.y >= 60 || EnemyBullet[i]->TransInfo.Position.y <= 0 ||
+					EnemyBullet[i]->TransInfo.Position.x >= 98 || EnemyBullet[i]->TransInfo.Position.x < 0)
 				{
-					if (Item[i]->TransInfo.Position.y <= 3 || Item[i]->TransInfo.Position.y >= 57)
-						crash = !crash;
+					delete EnemyBullet[i];
+					EnemyBullet[i] = nullptr;
+				}
+		}
 
-					if (Item[i]->TransInfo.Position.x <= 3 || Item[i]->TransInfo.Position.x >= 97)
-						crash2 = !crash2;
+		if (BossBullet[i] != nullptr)
+		{
+			if (Collision(BossBullet[i], _Player))
+			{
+				delete BossBullet[i];
+				BossBullet[i] = nullptr;
 
-					if (crash == true)
+				--_Player->Hp;
+
+				if (_Player->Hp == 0)
+				{
+					Initialize(_Cursor, (char*)"◀", 63.0f, 7.0f);
+					SceneState = MenuScene;
+					BattleHelper = 0;
+				}
+
+				break;
+			}
+
+			if (BossBullet[i] != nullptr)
+				if (BossBullet[i]->TransInfo.Position.y >= 60 || BossBullet[i]->TransInfo.Position.y <= 0 ||
+					BossBullet[i]->TransInfo.Position.x >= 98 || BossBullet[i]->TransInfo.Position.x < 0)
+				{
+					delete BossBullet[i];
+					BossBullet[i] = nullptr;
+				}
+		}
+	}
+
+	for (int i = 0; i < 32; ++i)
+	{
+		if (Item[i] != nullptr)
+		{
+			if (Collision(Item[i], _Player))
+			{
+				if (Item[i]->Info.Texture == (char*)"Boom")
+				{
+					if (_Player->Boom < 3)
+						++_Player->Boom;
+				}
+				if (Item[i]->Info.Texture == (char*)"Power")
+				{
+					if (_Player->Mode < 3)
+						++_Player->Mode;
+				}
+				if (Item[i]->Info.Texture == (char*)"옷/")
+				{
+					if (_Player->Hp < 3)
+						++_Player->Hp;
+				}
+				delete Item[i];
+				Item[i] = nullptr;
+
+				crash = false;
+				crash2 = false;
+			}
+			if (Item[i] != nullptr)
+			{
+				if (Item[i]->TransInfo.Position.y > 60 || Item[i]->TransInfo.Position.y < 0 ||
+					Item[i]->TransInfo.Position.x > 100 || Item[i]->TransInfo.Position.x < 0)
+				{
+					delete Item[i];
+					Item[i] = nullptr;
+
+					crash = false;
+					crash2 = false;
+				}
+			}
+		}
+	}
+
+	UpdateInput(_Player);
+
+	if (GetAsyncKeyState(VK_SPACE))
+	{
+		if (_Cursor->Time + 200 < GetTickCount64())
+		{
+			_Cursor->Time = GetTickCount64();
+			switch (_Player->Mode)
+			{
+			case 1:
+
+				for (int i = 0; i < 128; ++i)
+				{
+					if (Bullet[i] == nullptr)
 					{
-						Item[i]->TransInfo.Position.x += ItemDirection[i].x * 3.0f;
-						Item[i]->TransInfo.Position.y += ItemDirection[i].y * -1.5f;
+						Bullet[i] = CreatBullet(
+							_Player->TransInfo.Position.x,
+							_Player->TransInfo.Position.y - 1.0f);
+
+						break;
 					}
-					if (crash2 == true)
+				}
+				break;
+			case 2:
+
+				for (int i = 0; i < 64; ++i)
+				{
+					if (Bullet[i] == nullptr && Bullet[i + 1] == nullptr)
 					{
-						Item[i]->TransInfo.Position.x += ItemDirection[i].x * -3.0f;
-						Item[i]->TransInfo.Position.y += ItemDirection[i].y * 1.5f;
+						Bullet[i] = CreatBullet(
+							_Player->TransInfo.Position.x - 1.0f,
+							_Player->TransInfo.Position.y - 1.0f);
+						Bullet[i + 1] = CreatBullet(
+							_Player->TransInfo.Position.x + 1.0f,
+							_Player->TransInfo.Position.y - 1.0f);
+						break;
 					}
-					if (crash == false && crash2 == false)
+				}
+				break;
+			case 3:
+				for (int i = 0; i < 32; ++i)
+				{
+					if (Bullet[i] == nullptr && Bullet[i + 1] == nullptr &&
+						Bullet[i + 2] == nullptr && Bullet[i + 3] == nullptr)
+
 					{
-						Item[i]->TransInfo.Position.x += ItemDirection[i].x * 3.0f;
-						Item[i]->TransInfo.Position.y += ItemDirection[i].y * 1.5f;
+						Bullet[i] = CreatBullet(
+							_Player->TransInfo.Position.x - 1.0f,
+							_Player->TransInfo.Position.y + 2.0f);
+						Bullet[i + 1] = CreatBullet(
+							_Player->TransInfo.Position.x + 1.0f,
+							_Player->TransInfo.Position.y + 2.0f);
+						Bullet[i + 2] = CreatBullet(
+							_Player->TransInfo.Position.x - 3.0f,
+							_Player->TransInfo.Position.y + 2.0f);
+						Bullet[i + 3] = CreatBullet(
+							_Player->TransInfo.Position.x + 3.0f,
+							_Player->TransInfo.Position.y + 2.0f);
+						break;
+					}
+				}
+				break;
+			}
+		}
+	}
+
+	if (_Player->Boom)
+	{
+		if (!Check && GetAsyncKeyState(0x58) & 0x0001)
+		{
+			Check = true;
+		}
+
+		if (Check && !(GetAsyncKeyState(0x58) & 0x8000))
+		{
+
+			for (int i = 0; i < 32; ++i)
+			{
+				if (Enemy[i])
+				{
+					if (Item[i] == nullptr)
+					{
+						Item[i] = CreatItem(Enemy[i]->TransInfo.Position.x,
+							Enemy[i]->TransInfo.Position.y, Enemy[i]->Mode);
+						ItemDirection[i] = GetDirection(_Player, Item[i]);
 					}
 
-					OnDrawText(Item[i]->Info.Texture, Item[i]->TransInfo.Position.x, Item[i]->TransInfo.Position.y, 13);
+					delete Enemy[i];
+					Enemy[i] = nullptr;
+					++Score;
 				}
 			}
 
@@ -1289,94 +1330,116 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 			{
 				if (EnemyBullet[i])
 				{
-					OnDrawText(EnemyBullet[i]->Info.Texture,
-						EnemyBullet[i]->TransInfo.Position.x,
-						EnemyBullet[i]->TransInfo.Position.y);
-
-					EnemyBullet[i]->TransInfo.Position.x += EnemyBulletDirection[i].x * 2.0f;
-					EnemyBullet[i]->TransInfo.Position.y += EnemyBulletDirection[i].y * 1.5f;
+					delete EnemyBullet[i];
+					EnemyBullet[i] = nullptr;
 				}
 			}
 
-			for (int i = 0; i < 32; ++i)
+			for (int i = 0; i < 128; ++i)
 			{
-				if (Enemy[i])
+				if (BossBullet[i])
 				{
-					OnDrawText(Enemy[i]->Info.Texture,
-						Enemy[i]->TransInfo.Position.x,
-						Enemy[i]->TransInfo.Position.y,
-						12);
+					delete BossBullet[i];
+					BossBullet[i] = nullptr;
 
-					Enemy[i]->TransInfo.Position.y += 0.5f;
-
-					if (Enemy[i]->TransInfo.Position.y >= 50)
-					{
-						delete Enemy[i];
-						Enemy[i] = nullptr;
-					}
 				}
 			}
 
 			if (Boss[0])
 			{
-				for (int i = 0; i < 128; ++i)
+				Boss[0]->Hp -= 10;
+
+				if (Boss[0]->Hp <= 0)
 				{
-					if (BossBullet[i])
-					{
-						OnDrawText(BossBullet[i]->Info.Texture,
-							BossBullet[i]->TransInfo.Position.x,
-							BossBullet[i]->TransInfo.Position.y);
+					delete Boss[0];
+					Boss[0] = nullptr;
 
-						BossBullet[i]->TransInfo.Position.x += BossBulletDirection[i].x * 2.0f;
-						BossBullet[i]->TransInfo.Position.y += BossBulletDirection[i].y * 1.5f;
-					}
-				}
+					system("cls");
+					OnDrawText((char*)"클리어!!", 50, 30, 10);
 
-				OnDrawText((char*)"[", 10.0f, 4.0f, 3);
-				OnDrawText((char*)"]", 12.0f + Boss[0]->Hp, 4.0f, 3);
+					SceneState = MenuScene;
+					BattleHelper = 0;
 
-				for (int i = 0; i < Boss[0]->Hp; ++i)
-				{
-					OnDrawText((char*)"/", 11.0f + i, 4.0f, 12);
-				}
-
-				OnDrawText(Boss[0]->Info.Texture, Boss[0]->TransInfo.Position.x - 3.0f, Boss[0]->TransInfo.Position.y - 1.0f, 11);
-				OnDrawText(Boss[0]->Info.Texture, Boss[0]->TransInfo.Position.x - 3.0f, Boss[0]->TransInfo.Position.y, 11);
-				OnDrawText(Boss[0]->Info.Texture, Boss[0]->TransInfo.Position.x - 3.0f, Boss[0]->TransInfo.Position.y + 1.0f, 11);
-				OnDrawText(Boss[0]->Info.Texture, Boss[0]->TransInfo.Position.x - 3.0f, Boss[0]->TransInfo.Position.y + 2.0f, 11);
-			}
-
-			for (int i = 0; i < 128; ++i)
-			{
-				if (Bullet[i])
-				{
-					Bullet[i]->TransInfo.Position.y -= 2;
-					OnDrawText(Bullet[i]->Info.Texture,
-						Bullet[i]->TransInfo.Position.x,
-						Bullet[i]->TransInfo.Position.y);
 				}
 			}
 
+			--_Player->Boom;
+			Check = false;
+		}
+	}
 
-			OnDrawText((char*)"남은 시간 : ", float(60 - strlen("남은 시간 : ")), 1.0f);
-			if (_Player->Time + 1000 < GetTickCount64())
-			{
-				_Player->Time = GetTickCount64();
-				--Countdown;
-			}
-			OnDrawText(Countdown, 60.0f, 1.0f);
+	for (int i = 0; i < 128; ++i)
+	{
+		if (Bullet[i] != nullptr)
+		{
+			Bullet[i]->TransInfo.Position.y -= 2;
+		}
+	}
+	for (int i = 0; i < 128; ++i)
+	{
+		if (BossBullet[i] != nullptr)
+		{
+			BossBullet[i]->TransInfo.Position.x += BossBulletDirection[i].x * 2.0f;
+			BossBullet[i]->TransInfo.Position.y += BossBulletDirection[i].y * 1.5f;
+		}
+	}
+	for (int i = 0; i < 32; ++i)
+	{
+		if (Enemy[i] != nullptr)
+		{
+			Enemy[i]->TransInfo.Position.y += 0.5f;
 
-			OnDrawText((char*)"Score : ", float(60 - strlen("Score : ")), 2.0f);
-			OnDrawText(Score, 60.0f, 2.0f);
-
-			for (int i = 0; i < _Player->Hp; ++i)
+			if (Enemy[i]->TransInfo.Position.y >= 60)
 			{
-				OnDrawText(_Player->Info.Texture, (2.0f * i) + 0.5f, 59.0f);
-			}
-			for (int i = 0; i < _Player->Boom; ++i)
-			{
-				OnDrawText((char*)"Boom", (4.0f * i) + 0.5f, 58.0f);
+				delete Enemy[i];
+				Enemy[i] = nullptr;
 			}
 		}
 	}
+	for (int i = 0; i < 128; ++i)
+	{
+		if (EnemyBullet[i])
+		{
+			EnemyBullet[i]->TransInfo.Position.x += EnemyBulletDirection[i].x * 2.0f;
+			EnemyBullet[i]->TransInfo.Position.y += EnemyBulletDirection[i].y * 1.5f;
+		}
+	}
+
+	for (int i = 0; i < 32; i++)
+	{
+		if (Item[i])
+		{
+			if (Item[i]->TransInfo.Position.y <= 3 || Item[i]->TransInfo.Position.y >= 57)
+				crash = !crash;
+
+			if (Item[i]->TransInfo.Position.x <= 3 || Item[i]->TransInfo.Position.x >= 97)
+				crash2 = !crash2;
+
+			if (crash == true)
+			{
+				Item[i]->TransInfo.Position.x += ItemDirection[i].x * 3.0f;
+				Item[i]->TransInfo.Position.y += ItemDirection[i].y * -1.5f;
+			}
+			if (crash2 == true)
+			{
+				Item[i]->TransInfo.Position.x += ItemDirection[i].x * -3.0f;
+				Item[i]->TransInfo.Position.y += ItemDirection[i].y * 1.5f;
+			}
+			if (crash == false && crash2 == false)
+			{
+				Item[i]->TransInfo.Position.x += ItemDirection[i].x * 3.0f;
+				Item[i]->TransInfo.Position.y += ItemDirection[i].y * 1.5f;
+			}
+		}
+	}
+
+	if (_Player->Time + 1000 < GetTickCount64())
+	{
+		_Player->Time = GetTickCount64();
+		--Countdown;
+	}
+
+	BattleRender(BackGround, _Player, _Cursor, Enemy, Item, Boss,
+		Bullet, EnemyBullet, BossBullet, Countdown, Score);
+
 }
