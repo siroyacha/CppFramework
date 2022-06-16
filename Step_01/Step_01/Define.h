@@ -49,6 +49,8 @@ bool crash2 = false;
 // ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
 void Initialize(Object* _Object, char* _Texture, float _PosX = 0.0f, float _PosY = 0.0f, float _PosZ = 0.0f, int _Hp = 1, int _Boom = 0, int _Mode = 1);
 
+void Initialize_UI(UI_Object* _UIObject);
+
 // ** 이름을 셋팅하는 함수
 char* SetName();
 
@@ -99,7 +101,7 @@ void ScreenPrint(const char* _Texture, const float _x, const float _y, const int
 
 void ScreenPrint(const int _Value, const float _x, const float _y, const int _Color = 15);
 
-void SceneManager(Object* _Player, Object* _Cursor);
+void SceneManager(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
 void LogoRender();
 
@@ -109,19 +111,19 @@ void MenuRender(Object* _Cursor);
 
 void SceneMenu(Object* _Player, Object* _Cursor);
 
-void InfoRender(Object* _Player, Object* _Cursor);
+void InfoRender(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
-void SceneInfo(Object* _Player, Object* _Cursor);
+void SceneInfo(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
-void ShopRender(Object* _Player, Object* _Cursor);
+void ShopRender(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
-void ShopRender2(Object* _Player, Object* _Cursor);
+void ShopRender2(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
-void ShopRender3(Object* _Player, Object* _Cursor);
+void ShopRender3(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
-void ShopRender4(Object* _Player, Object* _Cursor);
+void ShopRender4(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
-void SceneShop(Object* _Player, Object* _Cursor);
+void SceneShop(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
 void MapRender(Object* _Player, Object* _Cursor);
 
@@ -179,13 +181,36 @@ void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float
 	_Object->Mode = _Mode;
 }
 
+void Initialize_UI(UI_Object* _UIObject)
+{
+	SetCursorPosition(60, 30);
+	_UIObject->Name = SetName();
+	_UIObject->Hp = 2000;
+	_UIObject->Cash = 10000;
+
+	_UIObject->BaseHPTire = 1;
+	_UIObject->BaseTerretTire = 1;
+	_UIObject->BaseDefenceTire = 1;
+	_UIObject->BaseAlamTire = 1;
+
+	_UIObject->FightHPTire = 1;
+	_UIObject->FightRerodeTire = 1;
+	_UIObject->FightSipinTire = 1;
+	_UIObject->FightBulletTire = 1;
+
+	_UIObject->PoliotTire = 1;
+	_UIObject->PoliotIncomeTire = 1;
+
+	_UIObject->HighScore = 0;
+}
+
 char* SetName()
 {
 	// ** 문자열을 입력 받을 임시 변수를 배열로 생성한다. (포인터 변수에는 바로 입력받을수 없음.)
 	char Buffer[128] = "";
 
 	// ** 이름 입력
-	cout << "입력 : "; cin >> Buffer;
+	cout << "이름 입력 : "; cin >> Buffer;
 
 	// ** 포인터 변수을 선언하여 입력받은 문자열의 길이만큼 크기를 할당함.
 	//char* pName = (char*)malloc(strlen(Buffer) + 1);
@@ -414,7 +439,7 @@ void ScreenPrint(const int _Value, const float _x, const float _y, const int _Co
 		strlen(_itoa(_Value, pText, 10)), &dw, NULL);
 }
 
-void SceneManager(Object* _Player, Object* _Cursor)
+void SceneManager(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 {
 	ScreenFlipping();
 
@@ -427,10 +452,10 @@ void SceneManager(Object* _Player, Object* _Cursor)
 		SceneMenu(_Player, _Cursor);
 		break;
 	case InfoScene:
-		SceneInfo(_Player, _Cursor);
+		SceneInfo(_Player, _Cursor, _UIObject);
 		break;
 	case ShopScene:
-		SceneShop(_Player, _Cursor);
+		SceneShop(_Player, _Cursor, _UIObject);
 		break;
 	case MapScene:
 		SceneMap(_Player, _Cursor);
@@ -507,13 +532,45 @@ void SceneMenu(Object* _Player, Object* _Cursor)
 	MenuRender(_Cursor);
 }
 
-void InfoRender(Object* _Player, Object* _Cursor)
+void InfoRender(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 {
 	ScreenClear();
 
-	/*
-	플레이어 정보
-	*/
+	ScreenPrint(_UIObject->Name, 10.0f, 12.0f);
+	ScreenPrint((char*)"남은 체력 :", 40.0f, 12.0f);
+	ScreenPrint(_UIObject->Hp, 53.0f, 12.0f);
+	ScreenPrint((char*)"보유 금액 :", 80.0f, 12.0f);
+	ScreenPrint(_UIObject->Cash, 93.0f, 12.0f);
+	ScreenPrint((char*)"최고 점수 :", 120.0f, 12.0f);
+	ScreenPrint(_UIObject->HighScore, 133.0f, 12.0f);
+
+	ScreenPrint((char*)"업그레이드 상태", 10.0f, 25.0f);
+
+	ScreenPrint((char*)"기지", 30.0f, 28.0f);
+	ScreenPrint((char*)"체력 업그레이드 레벨 :", 35.0f, 31.0f);
+	ScreenPrint(_UIObject->BaseHPTire, 59.0f, 31.0f);
+	ScreenPrint((char*)"대공포대 업그레이드 레벨 :", 35.0f, 33.0f);
+	ScreenPrint(_UIObject->BaseTerretTire, 63.0f, 33.0f);
+	ScreenPrint((char*)"방어력 업그레이드 레벨 :", 35.0f, 35.0f);
+	ScreenPrint(_UIObject->BaseDefenceTire, 61.0f, 35.0f);
+	ScreenPrint((char*)"레이더 업그레이드 레벨 :", 35.0f, 37.0f);
+	ScreenPrint(_UIObject->BaseAlamTire, 61.0f, 37.0f);
+
+	ScreenPrint((char*)"기체", 70.0f, 28.0f);
+	ScreenPrint((char*)"체력 업그레이드 레벨 :", 75.0f, 31.0f);
+	ScreenPrint(_UIObject->FightHPTire, 99.0f, 31.0f);
+	ScreenPrint((char*)"장전속도 업그레이드 레벨 :", 75.0f, 33.0f);
+	ScreenPrint(_UIObject->FightRerodeTire, 101.0f, 33.0f);
+	ScreenPrint((char*)"경량화 업그레이드 레벨 :", 75.0f, 35.0f);
+	ScreenPrint(_UIObject->FightSipinTire, 99.0f, 35.0f);
+	ScreenPrint((char*)"탄종 업그레이드 레벨 :", 75.0f, 37.0f);
+	ScreenPrint(_UIObject->FightBulletTire, 99.0f, 37.0f);
+
+	ScreenPrint((char*)"파일럿", 110.0f, 28.0f);
+	ScreenPrint((char*)"보상 업그레이드 레벨 :", 115.0f, 31.0f);
+	ScreenPrint(_UIObject->PoliotIncomeTire, 139.0f, 31.0f);
+	ScreenPrint((char*)"조종사 업그레이드 레벨 :", 115.0f, 33.0f);
+	ScreenPrint(_UIObject->PoliotTire, 141.0f, 33.0f);
 
 	for (int i = 0; i < 75; ++i)
 	{
@@ -526,7 +583,7 @@ void InfoRender(Object* _Player, Object* _Cursor)
 	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
 }
 
-void SceneInfo(Object* _Player, Object* _Cursor)
+void SceneInfo(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 {
 	if (GetAsyncKeyState(VK_LEFT) && _Cursor->TransInfo.Position.x > 49.0f)
 		_Cursor->TransInfo.Position.x -= 30.0f;
@@ -552,10 +609,10 @@ void SceneInfo(Object* _Player, Object* _Cursor)
 			break;
 		}
 	}
-	InfoRender(_Player, _Cursor);
+	InfoRender(_Player, _Cursor, _UIObject);
 }
 
-void ShopRender(Object* _Player, Object* _Cursor)
+void ShopRender(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 {
 	ScreenClear();
 
@@ -577,20 +634,33 @@ void ShopRender(Object* _Player, Object* _Cursor)
 	ScreenPrint((char*)"┌───┐", 33.0f, 6.0f);
 	ScreenPrint((char*)"┌───┐", 43.0f, 6.0f);
 
-	ScreenPrint((char*)"업그레이드 1", 30.0f, 11.0f);
-	ScreenPrint((char*)"업그레이드 2", 30.0f, 14.0f);
-	ScreenPrint((char*)"업그레이드 3", 30.0f, 17.0f);
-	ScreenPrint((char*)"업그레이드 4", 30.0f, 20.0f);
-	ScreenPrint((char*)"업그레이드 5", 30.0f, 23.0f);
-	ScreenPrint((char*)"업그레이드 6", 30.0f, 26.0f);
-	ScreenPrint((char*)"업그레이드 7", 30.0f, 29.0f);
-	ScreenPrint((char*)"업그레이드 8", 30.0f, 32.0f);
-	ScreenPrint((char*)"업그레이드 9", 30.0f, 35.0f);
+	ScreenPrint((char*)"체력 200 회복", 30.0f, 11.0f);
+	ScreenPrint((char*)"체력 500 회복", 30.0f, 14.0f);
+	ScreenPrint((char*)"체력 100 회복", 30.0f, 17.0f);
+	ScreenPrint((char*)"체력 전부 회복", 30.0f, 20.0f);
+	ScreenPrint((char*)"체력 강화", 30.0f, 23.0f);
+	ScreenPrint((char*)"대공포대 강화", 30.0f, 26.0f);
+	ScreenPrint((char*)"방어력 강화", 30.0f, 29.0f);
+	ScreenPrint((char*)"레이더 강화", 30.0f, 32.0f);
+
+	if (_Cursor->TransInfo.Position.y == 23)
+	{
+		ScreenPrint((char*)"체력 강화", 100.0f, 23.0f);
+
+	}
+
+	if (_Cursor->TransInfo.Position.y == 26)
+	{
+		ScreenPrint((char*)"대공포대 강화", 100.0f, 23.0f);
+
+	}
+
+	ScreenPrint((char*)"종료", 120.0f, 50.0f);
 
 	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
 }
 
-void ShopRender2(Object* _Player, Object* _Cursor)
+void ShopRender2(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 {
 	ScreenClear();
 
@@ -612,91 +682,76 @@ void ShopRender2(Object* _Player, Object* _Cursor)
 	ScreenPrint((char*)"│", 41.0f, 6.0f);
 	ScreenPrint((char*)"┌───┐", 43.0f, 6.0f);
 
-	ScreenPrint((char*)"업그레이드 1", 30.0f, 11.0f);
-	ScreenPrint((char*)"업그레이드 2", 30.0f, 14.0f);
-	ScreenPrint((char*)"업그레이드 3", 30.0f, 17.0f);
-	ScreenPrint((char*)"업그레이드 4", 30.0f, 20.0f);
-	ScreenPrint((char*)"업그레이드 5", 30.0f, 23.0f);
-	ScreenPrint((char*)"업그레이드 6", 30.0f, 26.0f);
-	ScreenPrint((char*)"업그레이드 7", 30.0f, 29.0f);
-	ScreenPrint((char*)"업그레이드 8", 30.0f, 32.0f);
-	ScreenPrint((char*)"업그레이드 9", 30.0f, 35.0f);
-
-	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
-}
-
-void ShopRender3(Object* _Player, Object* _Cursor)
-{
-	ScreenClear();
-
-	ScreenPrint((char*)"업그레이드 목록", 50.0f, 3.0f);
-
-	ScreenPrint((char*)"┌────────────────────────────────┐", 20.0f, 7.0f);
-
-	for (int i = 0; i < 44; i++)
-	{
-		ScreenPrint((char*)"│", 20.0f, float(8.0f + i));
-		ScreenPrint((char*)"│", 86.0f, float(8.0f + i));
-	}
-	ScreenPrint((char*)"└────────────────────────────────┘", 20.0f, 52.0f);
-
-	ScreenPrint((char*)"┌───┐", 23.0f, 6.0f);
-	ScreenPrint((char*)"┌───┐", 33.0f, 6.0f);
-	ScreenPrint((char*)"┌────┐", 43.0f, 5.0f);
-	ScreenPrint((char*)"파일럿", 46.5f, 6.0f);
-	ScreenPrint((char*)"│", 43.0f, 6.0f);
-	ScreenPrint((char*)"│", 53.0f, 6.0f);
-
-	ScreenPrint((char*)"업그레이드 1", 30.0f, 11.0f);
-	ScreenPrint((char*)"업그레이드 2", 30.0f, 14.0f);
-	ScreenPrint((char*)"업그레이드 3", 30.0f, 17.0f);
-	ScreenPrint((char*)"업그레이드 4", 30.0f, 20.0f);
-	ScreenPrint((char*)"업그레이드 5", 30.0f, 23.0f);
-	ScreenPrint((char*)"업그레이드 6", 30.0f, 26.0f);
-	ScreenPrint((char*)"업그레이드 7", 30.0f, 29.0f);
-	ScreenPrint((char*)"업그레이드 8", 30.0f, 32.0f);
-	ScreenPrint((char*)"업그레이드 9", 30.0f, 35.0f);
-
-	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
-}
-
-void ShopRender4(Object* _Player, Object* _Cursor)
-{
-	ScreenClear();
-
-	ScreenPrint((char*)"업그레이드 목록", 50.0f, 3.0f);
-
-	ScreenPrint((char*)"┌────────────────────────────────┐", 20.0f, 7.0f);
-
-	for (int i = 0; i < 44; i++)
-	{
-		ScreenPrint((char*)"│", 20.0f, float(8.0f + i));
-		ScreenPrint((char*)"│", 86.0f, float(8.0f + i));
-	}
-	ScreenPrint((char*)"└────────────────────────────────┘", 20.0f, 52.0f);
-
-	ScreenPrint((char*)"┌───┐", 23.0f, 6.0f);
-	ScreenPrint((char*)"┌───┐", 33.0f, 6.0f);
-	ScreenPrint((char*)"┌────┐", 43.0f, 5.0f);
-	ScreenPrint((char*)"파일럿", 46.5f, 6.0f);
-	ScreenPrint((char*)"│", 43.0f, 6.0f);
-	ScreenPrint((char*)"│", 53.0f, 6.0f);
-
-	ScreenPrint((char*)"업그레이드 1", 30.0f, 11.0f);
-	ScreenPrint((char*)"업그레이드 2", 30.0f, 14.0f);
-	ScreenPrint((char*)"업그레이드 3", 30.0f, 17.0f);
-	ScreenPrint((char*)"업그레이드 4", 30.0f, 20.0f);
-	ScreenPrint((char*)"업그레이드 5", 30.0f, 23.0f);
-	ScreenPrint((char*)"업그레이드 6", 30.0f, 26.0f);
-	ScreenPrint((char*)"업그레이드 7", 30.0f, 29.0f);
-	ScreenPrint((char*)"업그레이드 8", 30.0f, 32.0f);
-	ScreenPrint((char*)"업그레이드 9", 30.0f, 35.0f);
+	ScreenPrint((char*)"체력 강화", 30.0f, 11.0f);
+	ScreenPrint((char*)"장전속도 개선", 30.0f, 14.0f);
+	ScreenPrint((char*)"경량화", 30.0f, 17.0f);
+	ScreenPrint((char*)"탄종 교체", 30.0f, 20.0f);
 
 	ScreenPrint((char*)"종료", 120.0f, 50.0f);
 
 	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
 }
-void SceneShop(Object* _Player, Object* _Cursor)
+
+void ShopRender3(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
+{
+	ScreenClear();
+
+	ScreenPrint((char*)"업그레이드 목록", 50.0f, 3.0f);
+
+	ScreenPrint((char*)"┌────────────────────────────────┐", 20.0f, 7.0f);
+
+	for (int i = 0; i < 44; i++)
+	{
+		ScreenPrint((char*)"│", 20.0f, float(8.0f + i));
+		ScreenPrint((char*)"│", 86.0f, float(8.0f + i));
+	}
+	ScreenPrint((char*)"└────────────────────────────────┘", 20.0f, 52.0f);
+
+	ScreenPrint((char*)"┌───┐", 23.0f, 6.0f);
+	ScreenPrint((char*)"┌───┐", 33.0f, 6.0f);
+	ScreenPrint((char*)"┌────┐", 43.0f, 5.0f);
+	ScreenPrint((char*)"파일럿", 46.5f, 6.0f);
+	ScreenPrint((char*)"│", 43.0f, 6.0f);
+	ScreenPrint((char*)"│", 53.0f, 6.0f);
+
+	ScreenPrint((char*)"보상 강화", 30.0f, 11.0f);
+	ScreenPrint((char*)"조종사 훈련", 30.0f, 14.0f);
+
+	ScreenPrint((char*)"종료", 120.0f, 50.0f);
+
+	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
+}
+
+void ShopRender4(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
+{
+	ScreenClear();
+
+	ScreenPrint((char*)"업그레이드 목록", 50.0f, 3.0f);
+
+	ScreenPrint((char*)"┌────────────────────────────────┐", 20.0f, 7.0f);
+
+	for (int i = 0; i < 44; i++)
+	{
+		ScreenPrint((char*)"│", 20.0f, float(8.0f + i));
+		ScreenPrint((char*)"│", 86.0f, float(8.0f + i));
+	}
+	ScreenPrint((char*)"└────────────────────────────────┘", 20.0f, 52.0f);
+
+	ScreenPrint((char*)"┌───┐", 23.0f, 6.0f);
+	ScreenPrint((char*)"┌───┐", 33.0f, 6.0f);
+	ScreenPrint((char*)"┌────┐", 43.0f, 5.0f);
+	ScreenPrint((char*)"파일럿", 46.5f, 6.0f);
+	ScreenPrint((char*)"│", 43.0f, 6.0f);
+	ScreenPrint((char*)"│", 53.0f, 6.0f);
+
+	ScreenPrint((char*)"보상 강화", 30.0f, 11.0f);
+	ScreenPrint((char*)"조종사 훈련", 30.0f, 14.0f);
+
+	ScreenPrint((char*)"종료", 120.0f, 50.0f);
+
+	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
+}
+void SceneShop(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 {
 	if (GetAsyncKeyState(VK_UP) && _Cursor->TransInfo.Position.y > 11.0f)
 		_Cursor->TransInfo.Position.y -= 3;
@@ -721,17 +776,17 @@ void SceneShop(Object* _Player, Object* _Cursor)
 	switch (ShopMode)
 	{
 	case 0:
-		ShopRender(_Player, _Cursor);
+		ShopRender(_Player, _Cursor, _UIObject);
 		break;
 	case 1:
-		ShopRender2(_Player, _Cursor);
+		ShopRender2(_Player, _Cursor, _UIObject);
 		break;
 	case 2:
-		ShopRender3(_Player, _Cursor);
+		ShopRender3(_Player, _Cursor, _UIObject);
 		break;
 	case 3:
 		Initialize(_Cursor, (char*)"◁", 124.0f, 50.0f);
-		ShopRender4(_Player, _Cursor);
+		ShopRender4(_Player, _Cursor, _UIObject);
 		break;
 	}
 
@@ -922,8 +977,7 @@ void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
 		{
 			ScreenPrint(_Enemy[i]->Info.Texture,
 				_Enemy[i]->TransInfo.Position.x,
-				_Enemy[i]->TransInfo.Position.y,
-				12);
+				_Enemy[i]->TransInfo.Position.y, 12);
 		}
 	}
 
@@ -933,7 +987,7 @@ void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
 		{
 			ScreenPrint(_EnemyBullet[i]->Info.Texture,
 				_EnemyBullet[i]->TransInfo.Position.x,
-				_EnemyBullet[i]->TransInfo.Position.y);
+				_EnemyBullet[i]->TransInfo.Position.y, 14);
 		}
 	}
 	for (int i = 0; i < 128; ++i)
@@ -954,7 +1008,7 @@ void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
 			{
 				ScreenPrint(_BossBullet[i]->Info.Texture,
 					_BossBullet[i]->TransInfo.Position.x,
-					_BossBullet[i]->TransInfo.Position.y);
+					_BossBullet[i]->TransInfo.Position.y, 14);
 			}
 		}
 
@@ -1117,18 +1171,15 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 							delete Boss[0];
 							Boss[0] = nullptr;
 
-							system("cls");
-							OnDrawText((char*)"클리어!!", 50, 30, 10);
-
-							Initialize(_Cursor, (char*)"◀", 63.0f, 7.0f);
-							SceneState = MenuScene;
+							//SceneClear()
 						}
 						break;
 					}
 				}
 
 			if (Bullet[i] != nullptr)
-				if (Bullet[i]->TransInfo.Position.y < 0)
+				if (Bullet[i]->TransInfo.Position.y < 0 ||
+					Bullet[i]->TransInfo.Position.x >= 98 ||Bullet[i]->TransInfo.Position.x < 0)
 				{
 					delete Bullet[i];
 					Bullet[i] = nullptr;
@@ -1146,9 +1197,7 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 
 				if (_Player->Hp == 0)
 				{
-					Initialize(_Cursor, (char*)"◀", 63.0f, 7.0f);
-					SceneState = MenuScene;
-					BattleHelper = 0;
+					//SceneFail()
 				}
 				break;
 			}
@@ -1173,9 +1222,7 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 
 				if (_Player->Hp == 0)
 				{
-					Initialize(_Cursor, (char*)"◀", 63.0f, 7.0f);
-					SceneState = MenuScene;
-					BattleHelper = 0;
+					//SceneFail()
 				}
 
 				break;
@@ -1263,11 +1310,11 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 					if (Bullet[i] == nullptr && Bullet[i + 1] == nullptr)
 					{
 						Bullet[i] = CreatBullet(
-							_Player->TransInfo.Position.x - 1.0f,
-							_Player->TransInfo.Position.y - 1.0f);
+							_Player->TransInfo.Position.x - 3.0f,
+							_Player->TransInfo.Position.y - 4.0f);
 						Bullet[i + 1] = CreatBullet(
-							_Player->TransInfo.Position.x + 1.0f,
-							_Player->TransInfo.Position.y - 1.0f);
+							_Player->TransInfo.Position.x + 3.0f,
+							_Player->TransInfo.Position.y - 4.0f);
 						break;
 					}
 				}
@@ -1280,17 +1327,17 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 
 					{
 						Bullet[i] = CreatBullet(
-							_Player->TransInfo.Position.x - 1.0f,
+							_Player->TransInfo.Position.x - 2.0f,
 							_Player->TransInfo.Position.y + 2.0f);
 						Bullet[i + 1] = CreatBullet(
-							_Player->TransInfo.Position.x + 1.0f,
+							_Player->TransInfo.Position.x + 2.0f,
 							_Player->TransInfo.Position.y + 2.0f);
 						Bullet[i + 2] = CreatBullet(
-							_Player->TransInfo.Position.x - 3.0f,
-							_Player->TransInfo.Position.y + 2.0f);
+							_Player->TransInfo.Position.x - 4.0f,
+							_Player->TransInfo.Position.y + 1.0f);
 						Bullet[i + 3] = CreatBullet(
-							_Player->TransInfo.Position.x + 3.0f,
-							_Player->TransInfo.Position.y + 2.0f);
+							_Player->TransInfo.Position.x + 4.0f,
+							_Player->TransInfo.Position.y + 1.0f);
 						break;
 					}
 				}
@@ -1371,8 +1418,14 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 	for (int i = 0; i < 128; ++i)
 	{
 		if (Bullet[i] != nullptr)
-		{
 			Bullet[i]->TransInfo.Position.y -= 2;
+		if (_Player->Mode == 3)
+		{
+			if (Bullet[i + 2] != nullptr && Bullet[i + 3] != nullptr)
+			{
+				Bullet[i + 2]->TransInfo.Position.x -= 2;
+				Bullet[i + 3]->TransInfo.Position.x += 2;
+			}
 		}
 	}
 	for (int i = 0; i < 128; ++i)
@@ -1441,5 +1494,35 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 
 	BattleRender(BackGround, _Player, _Cursor, Enemy, Item, Boss,
 		Bullet, EnemyBullet, BossBullet, Countdown, Score);
+
+}
+/*
+void SceneClear()
+{
+	LoadCount = 10;
+	Initialize(_Cursor, (char*)"▶", 63.0f, 20.0f);
+	Countdown = 150;
+	Score = 0;
+
+	SceneState = MenuScene;
+
+}
+void SceneFail()
+{
+	LoadCount = 10;
+	Initialize(_Cursor, (char*)"▶", 63.0f, 20.0f);
+	Countdown = 150;
+	Score = 0;
+
+	SceneState = MenuScene;
+
+}
+*/
+void SceneVictory()
+{
+
+}
+void SceneLose()
+{
 
 }

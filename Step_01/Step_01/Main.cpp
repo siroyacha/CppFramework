@@ -1,4 +1,4 @@
-// ** Framework v0.8.7
+// ** Framework v0.8.7.1
 #include"Headers.h"
 
 // ** 충돌, 거리 구하기 필수로 넣기
@@ -22,6 +22,10 @@ int main(void)
 
 	Initialize(Cursor, (char*)"▶", 63.0f, 20.0f);
 
+	UI_Object* UIObject = new UI_Object;
+
+	Initialize_UI(UIObject);
+
 	ScreenLint();
 
 	// ** 현재 시간으로 초기화.
@@ -39,7 +43,7 @@ int main(void)
 			// ** 콘솔창 버퍼 전체 삭제
 			system("cls");
 
-			SceneManager(Player, Cursor);					
+			SceneManager(Player, Cursor, UIObject);
 		}
 	}
 	delete Player;

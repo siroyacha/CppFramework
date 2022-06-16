@@ -44,7 +44,27 @@ struct Object
 	Trasnsform TransInfo;
 };
 
+struct UI_Object
+{
+	char* Name;
+	int Cash;
+	int Hp;
 
+	int BaseHPTire;
+	int BaseTerretTire;
+	int BaseDefenceTire;
+	int BaseAlamTire;
+
+	int FightHPTire;
+	int FightRerodeTire;
+	int FightSipinTire;
+	int FightBulletTire;
+
+	int PoliotTire;
+	int PoliotIncomeTire;
+
+	int HighScore;
+};
 struct DrawTextInfo
 {
 	Information Info;
