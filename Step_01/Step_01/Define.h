@@ -9,6 +9,8 @@ const int MapScene = 4;
 const int LoadScene = 5;
 const int BattleScene = 6;
 const int ExitScene = 7;
+const int ClearScene = 8;
+const int FailScene = 9;
 
 static int g_nScreenindex;;
 static HANDLE g_hScreen[2];
@@ -101,6 +103,8 @@ void ScreenPrint(const char* _Texture, const float _x, const float _y, const int
 
 void ScreenPrint(const int _Value, const float _x, const float _y, const int _Color = 15);
 
+void UpdateCursorInput(Object* _Object, float _Min, float _Max);
+
 void SceneManager(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
 void LogoRender();
@@ -152,6 +156,14 @@ void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
 
 void SceneBattle(Object* _Player, Object* _Cursorr);
 
+void ClearRender();
+
+void SceneClear(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
+
+void FailRender();
+
+void SceneFail(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
+
 // ** 함수 선언부
 void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float _PosZ, int _Hp, int _Boom, int _Mode)
 {
@@ -179,6 +191,8 @@ void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float
 	_Object->Boom = _Boom;
 
 	_Object->Mode = _Mode;
+
+	_Object->Motal = true;
 }
 
 void Initialize_UI(UI_Object* _UIObject)
@@ -439,6 +453,21 @@ void ScreenPrint(const int _Value, const float _x, const float _y, const int _Co
 		strlen(_itoa(_Value, pText, 10)), &dw, NULL);
 }
 
+void UpdateCursorInput(Object* _Object, float _Min, float _Max)
+{
+	if (GetAsyncKeyState(VK_UP))
+		_Object->TransInfo.Position.y -= 3;
+
+	if (GetAsyncKeyState(VK_DOWN))
+		_Object->TransInfo.Position.y += 3;
+
+	if (_Object->TransInfo.Position.y < _Min)
+		_Object->TransInfo.Position.y = _Min;
+									
+	if (_Object->TransInfo.Position.y > _Max)
+		_Object->TransInfo.Position.y = _Max;
+}
+
 void SceneManager(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 {
 	ScreenFlipping();
@@ -468,6 +497,12 @@ void SceneManager(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 		break;
 	case ExitScene:
 		exit(NULL);
+		break;
+	case ClearScene:
+		SceneClear(_Player, _Cursor, _UIObject);
+		break;
+	case FailScene:
+		SceneFail(_Player, _Cursor, _UIObject);
 		break;
 	}
 }
@@ -506,11 +541,7 @@ void MenuRender(Object* _Cursor)
 
 void SceneMenu(Object* _Player, Object* _Cursor)
 {	
-	if (GetAsyncKeyState(VK_UP) && _Cursor->TransInfo.Position.y > 20.0f)
-		_Cursor->TransInfo.Position.y -= 3;
-
-	if (GetAsyncKeyState(VK_DOWN) && _Cursor->TransInfo.Position.y < 29.0f)
-		_Cursor->TransInfo.Position.y += 3;
+	UpdateCursorInput(_Cursor, 20.0f, 29.0f);
 
 	if (GetAsyncKeyState(VK_RETURN))
 	{
@@ -560,9 +591,9 @@ void InfoRender(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 	ScreenPrint((char*)"체력 업그레이드 레벨 :", 75.0f, 31.0f);
 	ScreenPrint(_UIObject->FightHPTire, 99.0f, 31.0f);
 	ScreenPrint((char*)"장전속도 업그레이드 레벨 :", 75.0f, 33.0f);
-	ScreenPrint(_UIObject->FightRerodeTire, 101.0f, 33.0f);
+	ScreenPrint(_UIObject->FightRerodeTire, 103.0f, 33.0f);
 	ScreenPrint((char*)"경량화 업그레이드 레벨 :", 75.0f, 35.0f);
-	ScreenPrint(_UIObject->FightSipinTire, 99.0f, 35.0f);
+	ScreenPrint(_UIObject->FightSipinTire, 101.0f, 35.0f);
 	ScreenPrint((char*)"탄종 업그레이드 레벨 :", 75.0f, 37.0f);
 	ScreenPrint(_UIObject->FightBulletTire, 99.0f, 37.0f);
 
@@ -602,6 +633,8 @@ void SceneInfo(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 			break;
 		case 79:
 			SceneState = MapScene;
+			_Cursor->TransInfo.Position.x = 75.0f;
+			_Cursor->TransInfo.Position.y = 30.0f;
 			break;
 		case 109:
 			Initialize(_Cursor, (char*)"▶", 63.0f, 20.0f);
@@ -636,23 +669,45 @@ void ShopRender(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 
 	ScreenPrint((char*)"체력 200 회복", 30.0f, 11.0f);
 	ScreenPrint((char*)"체력 500 회복", 30.0f, 14.0f);
-	ScreenPrint((char*)"체력 100 회복", 30.0f, 17.0f);
-	ScreenPrint((char*)"체력 전부 회복", 30.0f, 20.0f);
-	ScreenPrint((char*)"체력 강화", 30.0f, 23.0f);
-	ScreenPrint((char*)"대공포대 강화", 30.0f, 26.0f);
-	ScreenPrint((char*)"방어력 강화", 30.0f, 29.0f);
-	ScreenPrint((char*)"레이더 강화", 30.0f, 32.0f);
+	ScreenPrint((char*)"체력 전부 회복", 30.0f, 17.0f);
+	ScreenPrint((char*)"체력 강화", 30.0f, 20.0f);
+	ScreenPrint((char*)"대공포대 강화", 30.0f, 23.0f);
+	ScreenPrint((char*)"방어력 강화", 30.0f, 26.0f);
+	ScreenPrint((char*)"레이더 강화", 30.0f, 29.0f);
+
+	if (_Cursor->TransInfo.Position.y == 11)	
+		ScreenPrint((char*)"체력을 200 회복합니다.", 105.0f, 13.0f);
+	
+
+	if (_Cursor->TransInfo.Position.y == 14)	
+		ScreenPrint((char*)"체력을 200 회복합니다.", 105.0f, 13.0f);
+
+	if (_Cursor->TransInfo.Position.y == 17)
+		ScreenPrint((char*)"체력을 전부 회복합니다.", 105.0f, 13.0f);
+
+	if (_Cursor->TransInfo.Position.y == 20)
+	{
+		ScreenPrint((char*)"더 많은 활주로와 격납고를 배치해서", 105.0f, 13.0f);
+		ScreenPrint((char*)"적 공격에 더 버틸수 있게 됩니다.", 105.0f, 14.0f);
+	}
 
 	if (_Cursor->TransInfo.Position.y == 23)
 	{
-		ScreenPrint((char*)"체력 강화", 100.0f, 23.0f);
-
+		ScreenPrint((char*)"아군의 대공포대를 강화하여", 105.0f, 13.0f);
+		ScreenPrint((char*)"기지와 근접한 곳에서 전투할때", 105.0f, 14.0f);
+		ScreenPrint((char*)"더 많은 지원이 가능하게 합니다.", 105.0f, 15.0f);
 	}
 
 	if (_Cursor->TransInfo.Position.y == 26)
 	{
-		ScreenPrint((char*)"대공포대 강화", 100.0f, 23.0f);
+		ScreenPrint((char*)"더 튼튼한 자재를 사용하여",105.0f, 13.0f);
+		ScreenPrint((char*)"기지의 방호력을 강화합니다.", 105.0f, 14.0f);
+	}
 
+	if (_Cursor->TransInfo.Position.y == 29)
+	{
+		ScreenPrint((char*)"아군의 레이더를 강화하여", 105.0f, 13.0f);
+		ScreenPrint((char*)"더 먼거리에서도 적을 포착하게 합니다", 105.0f, 14.0f);
 	}
 
 	ScreenPrint((char*)"종료", 120.0f, 50.0f);
@@ -689,6 +744,30 @@ void ShopRender2(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 
 	ScreenPrint((char*)"종료", 120.0f, 50.0f);
 
+	if (_Cursor->TransInfo.Position.y == 11)
+	{
+		ScreenPrint((char*)"더 튼튼한 뼈대를 사용하여", 105.0f, 13.0f);
+		ScreenPrint((char*)"더 많은 총알에도 버틸수 있게 됩니다.", 105.0f, 14.0f);
+	}
+
+	if (_Cursor->TransInfo.Position.y == 14)
+	{
+		ScreenPrint((char*)"더 개선된 기관포를 장비하여", 105.0f, 13.0f);
+		ScreenPrint((char*)"더 빠른 속도로 공격이 가능해집니다.", 105.0f, 14.0f);
+	}
+
+	if (_Cursor->TransInfo.Position.y == 17)
+	{
+		ScreenPrint((char*)"더 가벼운 금속으로 외피를 덮어", 105.0f, 13.0f);
+		ScreenPrint((char*)"더 빠른 속도와 선회력을 제공받습니다.", 105.0f, 14.0f);
+	}
+
+	if (_Cursor->TransInfo.Position.y == 20)
+	{
+		ScreenPrint((char*)"더 많은 화약을 사용한 기관포탄을 사용하여", 105.0f, 13.0f);
+		ScreenPrint((char*)"적들에게 더 많은 피해를 줍니다.", 105.0f, 14.0f);
+	}
+
 	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
 }
 
@@ -718,6 +797,17 @@ void ShopRender3(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 	ScreenPrint((char*)"조종사 훈련", 30.0f, 14.0f);
 
 	ScreenPrint((char*)"종료", 120.0f, 50.0f);
+
+	if (_Cursor->TransInfo.Position.y == 11)
+	{
+		ScreenPrint((char*)"더 좋은 촬영장비를 사용해", 105.0f, 13.0f);
+		ScreenPrint((char*)"더 뛰어난 선전 영상으로 지원금을 늘립니다.", 105.0f, 14.0f);
+	}
+
+	if (_Cursor->TransInfo.Position.y == 14)
+	{
+		ScreenPrint((char*)"현재 계획 없음", 105.0f, 13.0f);
+	}
 
 	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
 }
@@ -751,13 +841,9 @@ void ShopRender4(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 
 	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
 }
+
 void SceneShop(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 {
-	if (GetAsyncKeyState(VK_UP) && _Cursor->TransInfo.Position.y > 11.0f)
-		_Cursor->TransInfo.Position.y -= 3;
-
-	if (GetAsyncKeyState(VK_DOWN) && _Cursor->TransInfo.Position.y < 35.0f)
-		_Cursor->TransInfo.Position.y += 3;
 
 	if (GetAsyncKeyState(VK_RIGHT) && ShopMode != 3)	
 		++ShopMode;
@@ -776,27 +862,98 @@ void SceneShop(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 	switch (ShopMode)
 	{
 	case 0:
+		UpdateCursorInput(_Cursor, 11.0f, 29.0f);
+
+		if (GetAsyncKeyState(VK_RETURN))
+		{
+			switch (int(_Cursor->TransInfo.Position.y))
+			{
+			case 11:
+				_UIObject->Hp += 200;
+				if (_UIObject->Hp > 2000 + (500 * _UIObject->BaseHPTire))
+				{
+					_UIObject->Hp = 2000 + (500 * _UIObject->BaseHPTire);
+				}
+				break;
+			case 14:
+				_UIObject->Hp += 5000;
+				if (_UIObject->Hp > 2000 + (500 * _UIObject->BaseHPTire))
+				{
+					_UIObject->Hp = 2000 + (500 * _UIObject->BaseHPTire);
+				}
+				break;
+			case 17:
+				_UIObject->Hp = 2000 + (500 * _UIObject->BaseHPTire);
+				break;
+			case 20:
+				++_UIObject->BaseHPTire;
+				_UIObject->Hp += 500;
+				break;
+			case 23:
+				++_UIObject->BaseTerretTire;
+				break;
+			case 26:
+				++_UIObject->BaseDefenceTire;
+				break;
+			case 29:
+				++_UIObject->BaseAlamTire;
+				break;
+			}
+		}
 		ShopRender(_Player, _Cursor, _UIObject);
 		break;
 	case 1:
+		UpdateCursorInput(_Cursor, 11.0f, 20.0f);
+
+		if (GetAsyncKeyState(VK_RETURN))
+		{
+			switch (int(_Cursor->TransInfo.Position.y))
+			{
+			case 11:
+				++_UIObject->FightHPTire;
+				break;
+			case 14:
+				++_UIObject->FightRerodeTire;
+				break;
+			case 17:
+				++_UIObject->FightSipinTire;
+				break;
+			case 20:
+				++_UIObject->FightBulletTire;
+				break;
+			}
+		}
 		ShopRender2(_Player, _Cursor, _UIObject);
 		break;
 	case 2:
+		UpdateCursorInput(_Cursor, 11.0f, 14.0f);
+
+		if (GetAsyncKeyState(VK_RETURN))
+		{
+			switch (int(_Cursor->TransInfo.Position.y))
+			{
+			case 11:
+				++_UIObject->PoliotIncomeTire;
+				break;
+			case 14:
+				++_UIObject->PoliotTire;
+				break;
+			}
+		}
 		ShopRender3(_Player, _Cursor, _UIObject);
 		break;
 	case 3:
 		Initialize(_Cursor, (char*)"◁", 124.0f, 50.0f);
+		if (GetAsyncKeyState(VK_RETURN))
+		{
+			Initialize(_Cursor, (char*)"↖", 49.0f, 43.0f);
+			SceneState = InfoScene;
+		}
 		ShopRender4(_Player, _Cursor, _UIObject);
 		break;
 	}
-
-	if (GetAsyncKeyState(VK_RETURN) && ShopMode == 3)
-	{
-		Initialize(_Cursor, (char*)"↖", 49.0f, 43.0f);
-		SceneState = InfoScene;
-	}
-
 }
+
 
 void MapRender(Object* _Player, Object* _Cursor)
 {
@@ -833,12 +990,16 @@ void MapRender(Object* _Player, Object* _Cursor)
 			ScreenPrint((char*)"/", 77.0f, 30.0f, 7);
 		}
 	}
-	//ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
+
+	ScreenPrint(_Cursor->Info.Texture,
+		_Cursor->TransInfo.Position.x,
+		_Cursor->TransInfo.Position.y);
 }
 void SceneMap(Object* _Player, Object* _Cursor)
 {
 	MapRender(_Player, _Cursor);
-	if (GetAsyncKeyState(VK_SPACE))
+	UpdateInput(_Cursor);
+	if (GetAsyncKeyState(VK_RETURN))
 		SceneState = LoadScene;
 }
 
@@ -1034,11 +1195,16 @@ void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
 			ScreenPrint(_Item[i]->Info.Texture, _Item[i]->TransInfo.Position.x, _Item[i]->TransInfo.Position.y, 13);
 		}
 	}
-
-	ScreenPrint(_Player->Info.Texture,
-		_Player->TransInfo.Position.x,
-		_Player->TransInfo.Position.y,
-		10);
+	if (_Player->Motal==false)
+		ScreenPrint(_Player->Info.Texture,
+			_Player->TransInfo.Position.x,
+			_Player->TransInfo.Position.y,
+			11);
+	else
+		ScreenPrint(_Player->Info.Texture,
+			_Player->TransInfo.Position.x,
+			_Player->TransInfo.Position.y,
+			10);	
 
 	ScreenPrint((char*)"남은 시간 : ", float(60 - strlen("남은 시간 : ")), 1.0f);
 	ScreenPrint(_Countdown, 60.0f, 1.0f);
@@ -1171,7 +1337,7 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 							delete Boss[0];
 							Boss[0] = nullptr;
 
-							//SceneClear()
+							SceneState = ClearScene;
 						}
 						break;
 					}
@@ -1188,17 +1354,20 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 
 		if (EnemyBullet[i] != nullptr)
 		{
-			if (Collision(EnemyBullet[i], _Player))
+			if (Collision(EnemyBullet[i], _Player) && _Player->Motal==true)
 			{
 				delete EnemyBullet[i];
 				EnemyBullet[i] = nullptr;
 
 				--_Player->Hp;
+				_Player->Mode = 1;
+				_Player->Motal = false;
+				_Player->TransInfo.Position.x = 50.0f;
+				_Player->TransInfo.Position.y = 50.0f;
 
-				if (_Player->Hp == 0)
-				{
-					//SceneFail()
-				}
+				if (_Player->Hp == 0)		
+					SceneState = FailScene;
+
 				break;
 			}
 
@@ -1219,11 +1388,13 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 				BossBullet[i] = nullptr;
 
 				--_Player->Hp;
+				_Player->Mode = 1;
+				_Player->Motal = false;
+				_Player->TransInfo.Position.x = 50.0f;
+				_Player->TransInfo.Position.y = 50.0f;
 
 				if (_Player->Hp == 0)
-				{
-					//SceneFail()
-				}
+					SceneState = FailScene;
 
 				break;
 			}
@@ -1485,39 +1656,160 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 			}
 		}
 	}
-
+	
 	if (_Player->Time + 1000 < GetTickCount64())
 	{
 		_Player->Time = GetTickCount64();
 		--Countdown;
+		if (Countdown % 2 == 0)
+			_Player->Motal = true;
 	}
 
 	BattleRender(BackGround, _Player, _Cursor, Enemy, Item, Boss,
 		Bullet, EnemyBullet, BossBullet, Countdown, Score);
 
 }
-/*
-void SceneClear()
+void ClearRender()
+{
+	ScreenClear();
+	ScreenPrint((char*)"미션 클리어!", 74.0f, 25.0f);
+
+	ScreenPrint((char*)"엔터 키를 누르면 정보 화면으로 돌아갑니다", 34.0f, 45.0f);
+
+}
+
+void SceneClear(Object* _Player,Object* _Cursor, UI_Object* _UIObject)
 {
 	LoadCount = 10;
 	Initialize(_Cursor, (char*)"▶", 63.0f, 20.0f);
 	Countdown = 150;
+
+	if (_UIObject->HighScore < Score)
+		_UIObject->HighScore = Score;
+
 	Score = 0;
 
-	SceneState = MenuScene;
+	for (int i = 0; i < 32; ++i)
+	{
+		if (Enemy[i] != nullptr)
+		{
+			delete Enemy[i];
+			Enemy[i] = nullptr;
+		}
 
+		if (Item[i] != nullptr)
+		{
+			delete Item[i];
+			Item[i] = nullptr;
+		}
+	}
+
+	for (int i = 0; i < 128; ++i)
+	{
+		if (Bullet[i] != nullptr)
+		{
+			delete Bullet[i];
+			Bullet[i] = nullptr;
+		}
+
+		if (EnemyBullet[i] != nullptr)
+		{
+			delete EnemyBullet[i];
+			EnemyBullet[i] = nullptr;
+		}
+
+		if (BossBullet[i] != nullptr)
+		{
+			delete BossBullet[i];
+			BossBullet[i] = nullptr;
+		}
+	}
+
+	_Player->Hp = 3;
+	_Player->Boom = 3;
+	_Player->Mode = 1;
+
+	if (GetAsyncKeyState(VK_RETURN))
+	{
+		Initialize(_Cursor, (char*)"↖", 49.0f, 43.0f);
+		SceneState = InfoScene;
+	}
+	ClearRender();
 }
-void SceneFail()
+
+void FailRender()
+{
+	ScreenClear();
+	ScreenPrint((char*)"미션 실패...", 74.0f, 25.0f);
+	ScreenPrint((char*)"기지가 X의 데미지를 입었습니다...", 74.0f, 26.0f);
+
+	ScreenPrint((char*)"엔터 키를 누르면 정보 화면으로 돌아갑니다", 34.0f, 45.0f);
+}
+
+void SceneFail(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 {
 	LoadCount = 10;
 	Initialize(_Cursor, (char*)"▶", 63.0f, 20.0f);
 	Countdown = 150;
+	
+	if (_UIObject->HighScore < Score)
+		_UIObject->HighScore = Score;
+
 	Score = 0;
 
-	SceneState = MenuScene;
+	for (int i = 0; i < 32; ++i)
+	{
+		if (Enemy[i] != nullptr)
+		{
+			delete Enemy[i];
+			Enemy[i] = nullptr;
+		}
 
+		if (Item[i] != nullptr)
+		{
+			delete Item[i];
+			Item[i] = nullptr;
+		}
+	}
+
+	for (int i = 0; i < 128; ++i)
+	{
+		if (Bullet[i] != nullptr)
+		{
+			delete Bullet[i];
+			Bullet[i] = nullptr;
+		}
+
+		if (EnemyBullet[i] != nullptr)
+		{
+			delete EnemyBullet[i];
+			EnemyBullet[i] = nullptr;
+		}
+
+		if (BossBullet[i] != nullptr)
+		{
+			delete BossBullet[i];
+			BossBullet[i] = nullptr;
+		}
+	}
+
+	_Player->Hp = 3;
+	_Player->Boom = 3;
+	_Player->Mode = 1;
+
+	if (_UIObject->Hp <= 0)
+	{
+		//SceneState = LoseScene;
+	}
+
+	if (GetAsyncKeyState(VK_RETURN))
+	{
+		Initialize(_Cursor, (char*)"↖", 49.0f, 43.0f);
+		SceneState = InfoScene;
+	}
+	FailRender();
 }
-*/
+
 void SceneVictory()
 {
 
