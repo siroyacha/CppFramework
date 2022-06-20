@@ -37,6 +37,7 @@ struct Object
 	int Hp;
 	int Boom;
 	int Mode;
+	int Hp_Max;
 	bool Motal;
 
 	ULONGLONG Time;

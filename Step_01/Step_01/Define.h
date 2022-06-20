@@ -11,6 +11,8 @@ const int BattleScene = 6;
 const int ExitScene = 7;
 const int ClearScene = 8;
 const int FailScene = 9;
+const int LoseScene = 10;
+const int VictoryScene = 11;
 
 static int g_nScreenindex;;
 static HANDLE g_hScreen[2];
@@ -47,6 +49,18 @@ int Countdown = 150;
 
 bool crash = false;
 bool crash2 = false;
+
+Object* Terret[2] = { nullptr };
+
+Object* TerretBullet[128] = { nullptr };
+
+Vector3 TerretBulletDirection[128];
+
+Object* TerretBullet2[128] = { nullptr };
+
+Vector3 TerretBulletDirection2[128];
+
+ULONGLONG TerretTime = GetTickCount64();
 
 // ** 초기화 함수 (디폴트 매개변수 : int _Value = 0)
 void Initialize(Object* _Object, char* _Texture, float _PosX = 0.0f, float _PosY = 0.0f, float _PosZ = 0.0f, int _Hp = 1, int _Boom = 0, int _Mode = 1);
@@ -91,6 +105,8 @@ Object* CreatBoss(const float _x, const float _y, const float _Scale_x, const in
 
 Object* CreatItem(const float _x, const float _y, const int _mode);
 
+Object* CreatTerret(const float _x, const float _y, const float _Scale_x, const int _Mode);
+
 void ScreenLint();
 
 void ScreenFlipping();
@@ -127,11 +143,13 @@ void ShopRender3(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
 void ShopRender4(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
+void ShopRender5();
+
 void SceneShop(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
 void MapRender(Object* _Player, Object* _Cursor);
 
-void SceneMap(Object* _Player, Object* _Cursor);
+void SceneMap(Object* _Player, Object* _Cursor, UI_Object* _UI_Object);
 
 void LoadRender(Object* _Player, Object* _Cursor);
 
@@ -150,11 +168,12 @@ void SceneLoad(Object* _Player, Object* _Cursor);
 DrawTextInfo BackGroundInitialize(int _i);
 
 void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
-	Object* _Enemy[], Object* _Item[], Object* _Boss[],
+	Object* _Terret[], Object* _Enemy[], Object* _Item[], Object* _Boss[],
 	Object* _Bullet[], Object* _EnemyBullet[], Object* _BossBullet[],
+	Object* _TerretBullet[], Object* _TerretBullet2[],
 	int _Countdown, int _Score);
 
-void SceneBattle(Object* _Player, Object* _Cursorr);
+void SceneBattle(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
 void ClearRender();
 
@@ -163,6 +182,10 @@ void SceneClear(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 void FailRender();
 
 void SceneFail(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
+
+void LoseRender();
+
+void SceneLose();
 
 // ** 함수 선언부
 void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float _PosZ, int _Hp, int _Boom, int _Mode)
@@ -187,6 +210,8 @@ void Initialize(Object* _Object, char* _Texture, float _PosX, float _PosY, float
 	_Object->Time = GetTickCount64();
 
 	_Object->Hp = _Hp;
+
+	_Object->Hp_Max = 3;
 
 	_Object->Boom = _Boom;
 
@@ -400,6 +425,27 @@ Object* CreatItem(const float _x, const float _y, const int _mode)
 	return _Object;
 }
 
+Object* CreatTerret(const float _x, const float _y, const float _Scale_x, const int _Mode)
+{
+	Object* _Object = new Object;
+	switch (_Mode)
+	{
+	case 1:
+		Initialize(_Object, (char*)"■▣■", _x, _y, 0.0f, 20);
+		break;
+	case 2:
+		Initialize(_Object, (char*)"■◈■", _x, _y, 0.0f, 30);
+		break;
+	case 3:
+		Initialize(_Object, (char*)"■⊙■", _x, _y, 0.0f, 50);
+		break;
+	}
+	_Object->TransInfo.Scale.x = _Scale_x;
+	_Object->TransInfo.Scale.y = 3;
+
+	return _Object;
+}
+
 void ScreenLint()
 {
 	CONSOLE_CURSOR_INFO cci;
@@ -468,7 +514,7 @@ void UpdateCursorInput(Object* _Object, float _Min, float _Max)
 		_Object->TransInfo.Position.y = _Max;
 }
 
-void SceneManager(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
+void SceneManager(Object* _Player, Object* _Cursor,  UI_Object* _UIObject)
 {
 	ScreenFlipping();
 
@@ -487,13 +533,13 @@ void SceneManager(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 		SceneShop(_Player, _Cursor, _UIObject);
 		break;
 	case MapScene:
-		SceneMap(_Player, _Cursor);
+		SceneMap(_Player, _Cursor, _UIObject);
 		break;
 	case LoadScene:
 		SceneLoad(_Player, _Cursor);
 		break;
 	case BattleScene:
-		SceneBattle(_Player, _Cursor);
+		SceneBattle(_Player, _Cursor, _UIObject);
 		break;
 	case ExitScene:
 		exit(NULL);
@@ -503,6 +549,9 @@ void SceneManager(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 		break;
 	case FailScene:
 		SceneFail(_Player, _Cursor, _UIObject);
+		break;
+	case LoseScene:
+		SceneLose();
 		break;
 	}
 }
@@ -680,7 +729,7 @@ void ShopRender(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 	
 
 	if (_Cursor->TransInfo.Position.y == 14)	
-		ScreenPrint((char*)"체력을 200 회복합니다.", 105.0f, 13.0f);
+		ScreenPrint((char*)"체력을 500 회복합니다.", 105.0f, 13.0f);
 
 	if (_Cursor->TransInfo.Position.y == 17)
 		ScreenPrint((char*)"체력을 전부 회복합니다.", 105.0f, 13.0f);
@@ -842,6 +891,13 @@ void ShopRender4(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 	ScreenPrint(_Cursor->Info.Texture, _Cursor->TransInfo.Position.x, _Cursor->TransInfo.Position.y);
 }
 
+void ShopRender5()
+{
+	ScreenClear();
+
+	ScreenPrint((char*)"구매 불가", 70.0f, 30.0f);
+}
+
 void SceneShop(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 {
 
@@ -869,34 +925,61 @@ void SceneShop(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 			switch (int(_Cursor->TransInfo.Position.y))
 			{
 			case 11:
-				_UIObject->Hp += 200;
-				if (_UIObject->Hp > 2000 + (500 * _UIObject->BaseHPTire))
+				if (_UIObject->Cash > 200)
 				{
-					_UIObject->Hp = 2000 + (500 * _UIObject->BaseHPTire);
+					_UIObject->Hp += 200;
+					if (_UIObject->Hp > 2000 + (500 * _UIObject->BaseHPTire))
+					{
+						_UIObject->Hp = 2000 + (500 * _UIObject->BaseHPTire);
+					}
 				}
+				else
+					ShopRender5();
 				break;
 			case 14:
-				_UIObject->Hp += 5000;
-				if (_UIObject->Hp > 2000 + (500 * _UIObject->BaseHPTire))
+				if (_UIObject->Cash > 500)
 				{
-					_UIObject->Hp = 2000 + (500 * _UIObject->BaseHPTire);
+					_UIObject->Hp += 500;
+					if (_UIObject->Hp > 2000 + (500 * _UIObject->BaseHPTire))
+					{
+						_UIObject->Hp = 2000 + (500 * _UIObject->BaseHPTire);
+					}
 				}
+				else
+					ShopRender5();
 				break;
 			case 17:
-				_UIObject->Hp = 2000 + (500 * _UIObject->BaseHPTire);
+				if (_UIObject->Cash > 2000)
+					_UIObject->Hp = 2000 + (500 * _UIObject->BaseHPTire);
+				else
+					ShopRender5();
 				break;
 			case 20:
-				++_UIObject->BaseHPTire;
-				_UIObject->Hp += 500;
+				if (_UIObject->Cash > 3000)
+				{
+					++_UIObject->BaseHPTire;
+					_UIObject->Hp += 500;
+				}
+				else
+					ShopRender5();
 				break;
 			case 23:
-				++_UIObject->BaseTerretTire;
+				if (_UIObject->BaseTerretTire <3 && 5000)
+					++_UIObject->BaseTerretTire;
+				else
+					ShopRender5();
 				break;
 			case 26:
-				++_UIObject->BaseDefenceTire;
+				if (_UIObject->BaseDefenceTire < 3 && 10000)
+					++_UIObject->BaseDefenceTire;
+				else
+					ShopRender5();
 				break;
 			case 29:
-				++_UIObject->BaseAlamTire;
+				if (_UIObject->BaseAlamTire < 3 && 5000)
+					++_UIObject->BaseAlamTire;
+				else
+					ShopRender5();
 				break;
 			}
 		}
@@ -910,16 +993,31 @@ void SceneShop(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 			switch (int(_Cursor->TransInfo.Position.y))
 			{
 			case 11:
-				++_UIObject->FightHPTire;
+				if (_UIObject->FightHPTire < 4 && 10000)
+				{
+					++_UIObject->FightHPTire;
+					++_Player->Hp_Max;
+				}
+				else
+					ShopRender5();
 				break;
 			case 14:
-				++_UIObject->FightRerodeTire;
+				if (_UIObject->FightRerodeTire < 3 && 10000)
+					++_UIObject->FightRerodeTire;
+				else
+					ShopRender5();
 				break;
 			case 17:
-				++_UIObject->FightSipinTire;
+				if (_UIObject->FightSipinTire < 3 && 5000)
+					++_UIObject->FightSipinTire;
+				else
+					ShopRender5();
 				break;
 			case 20:
-				++_UIObject->FightBulletTire;
+				if (_UIObject->FightBulletTire < 3 && 5000)
+					++_UIObject->FightBulletTire;
+				else
+					ShopRender5();
 				break;
 			}
 		}
@@ -933,10 +1031,16 @@ void SceneShop(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 			switch (int(_Cursor->TransInfo.Position.y))
 			{
 			case 11:
-				++_UIObject->PoliotIncomeTire;
+				if (_UIObject->PoliotIncomeTire < 3 && 2000)
+					++_UIObject->PoliotIncomeTire;
+				else
+					ShopRender5();
 				break;
 			case 14:
-				++_UIObject->PoliotTire;
+				if (_UIObject->PoliotTire < 3 && 5000)
+					++_UIObject->PoliotTire;
+				else
+					ShopRender5();
 				break;
 			}
 		}
@@ -995,12 +1099,13 @@ void MapRender(Object* _Player, Object* _Cursor)
 		_Cursor->TransInfo.Position.x,
 		_Cursor->TransInfo.Position.y);
 }
-void SceneMap(Object* _Player, Object* _Cursor)
+void SceneMap(Object* _Player, Object* _Cursor, UI_Object* _UI_Object)
 {
 	MapRender(_Player, _Cursor);
 	UpdateInput(_Cursor);
+
 	if (GetAsyncKeyState(VK_RETURN))
-		SceneState = LoadScene;
+			SceneState = LoadScene;	
 }
 
 void LoadRender(Object* _Player, Object* _Cursor)
@@ -1103,8 +1208,8 @@ DrawTextInfo BackGroundInitialize(int _i)
 	BackGround.Info.Option = 0;
 
 	// ** 좌표를 랜덤으로 설정함.
-	BackGround.TransInfo.Position.x = float(rand() % 100 + 10);
-	BackGround.TransInfo.Position.y = float(rand() % 50 + 1);
+	BackGround.TransInfo.Position.x = float(rand() % 150 + 10);
+	BackGround.TransInfo.Position.y = float(rand() % 57 + 1);
 
 	// ** 배경으로 사용될 텍스처를 설정.
 	BackGround.Info.Texture = (char*)"*";
@@ -1116,8 +1221,9 @@ DrawTextInfo BackGroundInitialize(int _i)
 }
 
 void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
-	Object* _Enemy[], Object* _Item[], Object* _Boss[],
-	Object* _Bullet[], Object* _EnemyBullet[], Object* _BossBullet[],
+	Object* _Terret[], Object* _Enemy[], Object* _Item[], Object* _Boss[],
+	Object* _Bullet[], Object* _EnemyBullet[], Object* _BossBullet[], 
+	Object* _TerretBullet[], Object* _TerretBullet2[],
 	int _Countdown, int _Score)
 {
 	ScreenClear();
@@ -1142,6 +1248,16 @@ void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
 		}
 	}
 
+	for (int i = 0; i < 22; ++i)
+	{
+		if (_Terret[i] != nullptr)
+		{
+			ScreenPrint(_Terret[i]->Info.Texture,
+				_Terret[i]->TransInfo.Position.x,
+				_Terret[i]->TransInfo.Position.y, 15);
+		}
+	}
+
 	for (int i = 0; i < 128; ++i)
 	{
 		if (_EnemyBullet[i] != nullptr)
@@ -1151,6 +1267,7 @@ void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
 				_EnemyBullet[i]->TransInfo.Position.y, 14);
 		}
 	}
+
 	for (int i = 0; i < 128; ++i)
 	{
 		if (_Bullet[i] != nullptr)
@@ -1158,6 +1275,26 @@ void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
 			ScreenPrint(_Bullet[i]->Info.Texture,
 				_Bullet[i]->TransInfo.Position.x,
 				_Bullet[i]->TransInfo.Position.y);
+		}
+	}
+
+	for (int i = 0; i < 128; ++i)
+	{
+		if (_TerretBullet[i] != nullptr)
+		{
+			ScreenPrint(_TerretBullet[i]->Info.Texture,
+				_TerretBullet[i]->TransInfo.Position.x,
+				_TerretBullet[i]->TransInfo.Position.y);
+		}
+	}
+
+	for (int i = 0; i < 128; ++i)
+	{
+		if (_TerretBullet2[i] != nullptr)
+		{
+			ScreenPrint(_TerretBullet2[i]->Info.Texture,
+				_TerretBullet2[i]->TransInfo.Position.x,
+				_TerretBullet2[i]->TransInfo.Position.y);
 		}
 	}
 
@@ -1206,11 +1343,11 @@ void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
 			_Player->TransInfo.Position.y,
 			10);	
 
-	ScreenPrint((char*)"남은 시간 : ", float(60 - strlen("남은 시간 : ")), 1.0f);
-	ScreenPrint(_Countdown, 60.0f, 1.0f);
+	ScreenPrint((char*)"남은 시간 : ", float(75 - strlen("남은 시간 : ")), 1.0f);
+	ScreenPrint(_Countdown, 75.0f, 1.0f);
 
-	ScreenPrint((char*)"Score : ", float(60 - strlen("Score : ")), 2.0f);
-	ScreenPrint(_Score, 60.0f, 2.0f);
+	ScreenPrint((char*)"Score : ", float(75 - strlen("Score : ")), 2.0f);
+	ScreenPrint(_Score, 75.0f, 2.0f);
 
 	for (int i = 0; i < _Player->Hp; ++i)
 	{
@@ -1222,7 +1359,7 @@ void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
 	}
 }
 
-void SceneBattle(Object* _Player, Object* _Cursor)
+void SceneBattle(Object* _Player, Object* _Cursor, UI_Object* _UI_Object)
 {
 	DrawTextInfo BackGround[30];
 	for (int i = 0; i < 30; ++i)
@@ -1232,7 +1369,7 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 
 	int BattleHelper = 1;
 
-	if (EnemyTime + 1500 < GetTickCount64())
+	if (EnemyTime + 800 < GetTickCount64())
 	{
 		EnemyTime = GetTickCount64();
 
@@ -1242,7 +1379,7 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 			{
 				srand((GetTickCount64() + i * i) * GetTickCount64());
 
-				Enemy[i] = CreatEnemy(float(rand() % 100), 1.0f);
+				Enemy[i] = CreatEnemy(float(rand() % 150), 1.0f);
 
 				break;
 			}
@@ -1264,11 +1401,57 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 		}
 	}
 
+	for (int i = 0; i < 2; ++i)
+	{
+		if (Terret[i] == nullptr)
+		{
+			Terret[i] = CreatTerret(50 * i + 50, 50, 3, _UI_Object->BaseTerretTire);
+		}
+	}
+
+	if (TerretTime + 1500 < GetTickCount64())
+	{
+		TerretTime = GetTickCount64();
+		if (Terret[0] != nullptr && Terret[1] != nullptr)
+		{
+			for (int i = 0; i < 32; ++i)
+			{
+				if (Enemy[i] != nullptr)
+				{
+					for (int j = 0; j < 128; ++j)
+					{
+						if (TerretBullet[j] == nullptr && (Terret[0]->Time + ((rand() % 15) * 100)) < GetTickCount64())
+						{
+							TerretBullet[j] = CreatBullet(
+								Terret[0]->TransInfo.Position.x,
+								Terret[0]->TransInfo.Position.y + 1.0f);
+							TerretBulletDirection[j] = GetDirection(Terret[0], Enemy[i]);
+							Terret[0]->Time = GetTickCount64();
+
+							break;
+						}
+						if (TerretBullet2[j] == nullptr && (Terret[1]->Time + ((rand() % 15) * 100)) < GetTickCount64())
+						{
+							TerretBullet2[j] = CreatBullet(
+								Terret[1]->TransInfo.Position.x,
+								Terret[1]->TransInfo.Position.y + 1.0f);
+
+							TerretBulletDirection2[j] = GetDirection(Terret[1], Enemy[i]);
+							Terret[1]->Time = GetTickCount64();
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	if (Countdown == 120)
 	{
 		for (int i = 0; i < 4; ++i)
-			Boss[i] = CreatBoss(50.0f, 10.0f, 5.0f, 100 * (i + 1));;
+			Boss[i] = CreatBoss(70.0f, 10.0f, 5.0f, 100 * (i + 1));;
 	}
+
 	if (Boss[0])
 	{
 		for (int i = 0; i < 128; ++i)
@@ -1289,13 +1472,135 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 
 	for (int i = 0; i < 128; ++i)
 	{
+		if (TerretBullet[i] != nullptr)
+		{
+			for (int j = 0; j < 32; ++j)
+			{
+				if (Enemy[j] != nullptr)
+				{
+					if (Collision(TerretBullet[i], Enemy[j]))
+					{
+						Enemy[j]->Hp = Enemy[j]->Hp - TerretBullet[i]->Hp;
+						delete TerretBullet[i];
+						TerretBullet[i] = nullptr;
+
+						if (Enemy[j]->Hp <= 0)
+						{
+							if (Item[j] == nullptr)
+							{
+								Item[j] = CreatItem(Enemy[j]->TransInfo.Position.x,
+									Enemy[j]->TransInfo.Position.y, Enemy[j]->Mode);
+								ItemDirection[j] = GetDirection(_Player, Item[j]);
+							}
+						}
+
+						delete Enemy[j];
+						Enemy[j] = nullptr;
+
+						++Score;
+
+						break;
+					}
+				}
+			}
+
+			if (Boss[0] != nullptr)
+				if (TerretBullet[i] != nullptr)
+				{
+					if (Collision(TerretBullet[i], Boss[0]))
+					{
+						delete TerretBullet[i];
+						TerretBullet[i] = nullptr;
+
+						--Boss[0]->Hp;
+						if (Boss[0]->Hp <= 0)
+						{
+							delete Boss[0];
+							Boss[0] = nullptr;
+
+							SceneState = ClearScene;
+						}
+						break;
+					}
+				}
+
+			if (TerretBullet[i] != nullptr)
+				if (TerretBullet[i]->TransInfo.Position.y < 0 ||
+					TerretBullet[i]->TransInfo.Position.x >= 148 || TerretBullet[i]->TransInfo.Position.x < 0)
+				{
+					delete TerretBullet[i];
+					TerretBullet[i] = nullptr;
+				}
+		}
+		if (TerretBullet2[i] != nullptr)
+		{
+			for (int j = 0; j < 32; ++j)
+			{
+				if (Enemy[j] != nullptr)
+				{
+					if (Collision(TerretBullet2[i], Enemy[j]))
+					{
+						Enemy[j]->Hp = Enemy[j]->Hp - TerretBullet2[i]->Hp;
+						delete TerretBullet2[i];
+						TerretBullet2[i] = nullptr;
+
+						if (Enemy[j]->Hp <= 0)
+						{
+							if (Item[j] == nullptr)
+							{
+								Item[j] = CreatItem(Enemy[j]->TransInfo.Position.x,
+									Enemy[j]->TransInfo.Position.y, Enemy[j]->Mode);
+								ItemDirection[j] = GetDirection(_Player, Item[j]);
+							}
+						}
+
+						delete Enemy[j];
+						Enemy[j] = nullptr;
+
+						++Score;
+
+						break;
+					}
+				}
+			}
+
+			if (Boss[0] != nullptr)
+				if (TerretBullet2[i] != nullptr)
+				{
+					if (Collision(TerretBullet2[i], Boss[0]))
+					{
+						delete TerretBullet2[i];
+						TerretBullet2[i] = nullptr;
+
+						--Boss[0]->Hp;
+						if (Boss[0]->Hp <= 0)
+						{
+							delete Boss[0];
+							Boss[0] = nullptr;
+
+							SceneState = ClearScene;
+						}
+						break;
+					}
+				}
+
+			if (TerretBullet2[i] != nullptr)
+				if (TerretBullet2[i]->TransInfo.Position.y < 0 ||
+					TerretBullet2[i]->TransInfo.Position.x >= 148 || TerretBullet2[i]->TransInfo.Position.x < 0)
+				{
+					delete TerretBullet2[i];
+					TerretBullet2[i] = nullptr;
+				}
+		}
+	}
+	for (int i = 0; i < 128; ++i)
+	{
 		if (Bullet[i] != nullptr)
 		{
 			for (int j = 0; j < 32; ++j)
 			{
 				if (Enemy[j] != nullptr)
 				{
-
 					if (Collision(Bullet[i], Enemy[j]))
 					{
 						Enemy[j]->Hp = Enemy[j]->Hp - Bullet[i]->Hp;
@@ -1345,7 +1650,7 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 
 			if (Bullet[i] != nullptr)
 				if (Bullet[i]->TransInfo.Position.y < 0 ||
-					Bullet[i]->TransInfo.Position.x >= 98 ||Bullet[i]->TransInfo.Position.x < 0)
+					Bullet[i]->TransInfo.Position.x >= 148 ||Bullet[i]->TransInfo.Position.x < 0)
 				{
 					delete Bullet[i];
 					Bullet[i] = nullptr;
@@ -1361,8 +1666,9 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 
 				--_Player->Hp;
 				_Player->Mode = 1;
+				_Player->Boom = 3;
 				_Player->Motal = false;
-				_Player->TransInfo.Position.x = 50.0f;
+				_Player->TransInfo.Position.x = 75.0f;
 				_Player->TransInfo.Position.y = 50.0f;
 
 				if (_Player->Hp == 0)		
@@ -1370,10 +1676,29 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 
 				break;
 			}
+			for (int j = 0; j < 2; ++j)
+			{
+				if (Terret[j])
+				{
+					if (Collision(EnemyBullet[i], Terret[j]))
+					{
+						delete EnemyBullet[i];
+						EnemyBullet[i] = nullptr;
 
+						--Terret[j]->Hp;
+
+						if (Terret[j]->Hp <= 0)
+						{
+							delete Terret[j];
+							Terret[j] = nullptr;
+						}
+						break;
+					}
+				}
+			}
 			if (EnemyBullet[i] != nullptr)
 				if (EnemyBullet[i]->TransInfo.Position.y >= 60 || EnemyBullet[i]->TransInfo.Position.y <= 0 ||
-					EnemyBullet[i]->TransInfo.Position.x >= 98 || EnemyBullet[i]->TransInfo.Position.x < 0)
+					EnemyBullet[i]->TransInfo.Position.x >= 148 || EnemyBullet[i]->TransInfo.Position.x < 0)
 				{
 					delete EnemyBullet[i];
 					EnemyBullet[i] = nullptr;
@@ -1389,8 +1714,9 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 
 				--_Player->Hp;
 				_Player->Mode = 1;
+				_Player->Boom = 3;
 				_Player->Motal = false;
-				_Player->TransInfo.Position.x = 50.0f;
+				_Player->TransInfo.Position.x = 75.0f;
 				_Player->TransInfo.Position.y = 50.0f;
 
 				if (_Player->Hp == 0)
@@ -1399,9 +1725,30 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 				break;
 			}
 
+			for (int j = 0; j < 2; ++j)
+			{
+				if (Terret[j])
+				{
+					if (Collision(BossBullet[i], Terret[j]))
+					{
+						delete BossBullet[i];
+						BossBullet[i] = nullptr;
+
+						--Terret[j]->Hp;
+
+						if (Terret[j]->Hp <= 0)
+						{
+							delete Terret[j];
+							Terret[j] = nullptr;
+						}
+						break;
+					}
+				}
+			}
+			
 			if (BossBullet[i] != nullptr)
 				if (BossBullet[i]->TransInfo.Position.y >= 60 || BossBullet[i]->TransInfo.Position.y <= 0 ||
-					BossBullet[i]->TransInfo.Position.x >= 98 || BossBullet[i]->TransInfo.Position.x < 0)
+					BossBullet[i]->TransInfo.Position.x >= 148 || BossBullet[i]->TransInfo.Position.x < 0)
 				{
 					delete BossBullet[i];
 					BossBullet[i] = nullptr;
@@ -1419,16 +1766,22 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 				{
 					if (_Player->Boom < 3)
 						++_Player->Boom;
+					else
+						Score += 3;
 				}
 				if (Item[i]->Info.Texture == (char*)"Power")
 				{
 					if (_Player->Mode < 3)
 						++_Player->Mode;
+					else
+						Score += 10;
 				}
 				if (Item[i]->Info.Texture == (char*)"옷/")
 				{
-					if (_Player->Hp < 3)
+					if (_Player->Hp < _Player->Hp_Max)
 						++_Player->Hp;
+					else
+						Score += 5;
 				}
 				delete Item[i];
 				Item[i] = nullptr;
@@ -1439,7 +1792,7 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 			if (Item[i] != nullptr)
 			{
 				if (Item[i]->TransInfo.Position.y > 60 || Item[i]->TransInfo.Position.y < 0 ||
-					Item[i]->TransInfo.Position.x > 100 || Item[i]->TransInfo.Position.x < 0)
+					Item[i]->TransInfo.Position.x > 160 || Item[i]->TransInfo.Position.x < 0)
 				{
 					delete Item[i];
 					Item[i] = nullptr;
@@ -1620,12 +1973,27 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 			}
 		}
 	}
+
 	for (int i = 0; i < 128; ++i)
 	{
 		if (EnemyBullet[i])
 		{
 			EnemyBullet[i]->TransInfo.Position.x += EnemyBulletDirection[i].x * 2.0f;
 			EnemyBullet[i]->TransInfo.Position.y += EnemyBulletDirection[i].y * 1.5f;
+		}
+	}
+
+	for (int i = 0; i < 128; ++i)
+	{
+		if (TerretBullet[i])
+		{
+			TerretBullet[i]->TransInfo.Position.x -= TerretBulletDirection[i].x * 2.0f;
+			TerretBullet[i]->TransInfo.Position.y -= TerretBulletDirection[i].y * 1.5f;
+		}
+		if (TerretBullet2[i])
+		{
+			TerretBullet2[i]->TransInfo.Position.x -= TerretBulletDirection2[i].x * 2.0f;
+			TerretBullet2[i]->TransInfo.Position.y -= TerretBulletDirection2[i].y * 1.5f;
 		}
 	}
 
@@ -1665,10 +2033,11 @@ void SceneBattle(Object* _Player, Object* _Cursor)
 			_Player->Motal = true;
 	}
 
-	BattleRender(BackGround, _Player, _Cursor, Enemy, Item, Boss,
-		Bullet, EnemyBullet, BossBullet, Countdown, Score);
+	BattleRender(BackGround, _Player, _Cursor, Terret, Enemy, Item, Boss,
+		Bullet, EnemyBullet, BossBullet, TerretBullet, TerretBullet2, Countdown, Score);
 
 }
+
 void ClearRender()
 {
 	ScreenClear();
@@ -1678,7 +2047,7 @@ void ClearRender()
 
 }
 
-void SceneClear(Object* _Player,Object* _Cursor, UI_Object* _UIObject)
+void SceneClear(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 {
 	LoadCount = 10;
 	Initialize(_Cursor, (char*)"▶", 63.0f, 20.0f);
@@ -1703,7 +2072,27 @@ void SceneClear(Object* _Player,Object* _Cursor, UI_Object* _UIObject)
 			Item[i] = nullptr;
 		}
 	}
-
+	for (int i = 0; i < 2; ++i)
+	{
+		if (Terret[i] != nullptr)
+		{
+			delete Terret[i];
+			Terret[i] = nullptr;
+		}
+	}
+	for (int i = 0; i < 128; ++i)
+	{
+		if (TerretBullet[i] != nullptr)
+		{
+			delete TerretBullet[i];
+			TerretBullet[i] = nullptr;
+		}
+		if (TerretBullet2[i] != nullptr)
+		{
+			delete TerretBullet2[i];
+			TerretBullet2[i] = nullptr;
+		}
+	}
 	for (int i = 0; i < 128; ++i)
 	{
 		if (Bullet[i] != nullptr)
@@ -1743,7 +2132,7 @@ void FailRender()
 	ScreenPrint((char*)"미션 실패...", 74.0f, 25.0f);
 	ScreenPrint((char*)"기지가 X의 데미지를 입었습니다...", 74.0f, 26.0f);
 
-	ScreenPrint((char*)"엔터 키를 누르면 정보 화면으로 돌아갑니다", 34.0f, 45.0f);
+	ScreenPrint((char*)"엔터 키를 누르면 정보 화면으로 돌아갑니다", 54.0f, 45.0f);
 }
 
 void SceneFail(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
@@ -1752,6 +2141,7 @@ void SceneFail(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 	Initialize(_Cursor, (char*)"▶", 63.0f, 20.0f);
 	Countdown = 150;
 	
+	_UIObject->Hp -= 2000;
 	if (_UIObject->HighScore < Score)
 		_UIObject->HighScore = Score;
 
@@ -1769,6 +2159,28 @@ void SceneFail(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 		{
 			delete Item[i];
 			Item[i] = nullptr;
+		}
+	}
+
+	for (int i = 0; i < 2; ++i)
+	{
+		if (Terret[i] != nullptr)
+		{
+			delete Terret[i];
+			Terret[i] = nullptr;
+		}
+	}
+	for (int i = 0; i < 128; ++i)
+	{
+		if (TerretBullet[i] != nullptr)
+		{
+			delete TerretBullet[i];
+			TerretBullet[i] = nullptr;
+		}
+		if (TerretBullet2[i] != nullptr)
+		{
+			delete TerretBullet2[i];
+			TerretBullet2[i] = nullptr;
 		}
 	}
 
@@ -1799,7 +2211,7 @@ void SceneFail(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 
 	if (_UIObject->Hp <= 0)
 	{
-		//SceneState = LoseScene;
+		SceneState = LoseScene;
 	}
 
 	if (GetAsyncKeyState(VK_RETURN))
@@ -1810,11 +2222,38 @@ void SceneFail(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 	FailRender();
 }
 
-void SceneVictory()
+void VictoryRender(UI_Object* _UI_Object)
 {
-
+	ScreenClear();
+	ScreenPrint((char*)"승리!", 60.0f, 25.0f);
+	ScreenPrint((char*)"적군의 공격에서 기지를 성공적으로 방어해냈습니다!", 34.0f, 27.0f);
+	ScreenPrint((char*)"최고 점수는", 54.0f, 30.0f);
+	ScreenPrint(_UI_Object->HighScore, 66.0f, 30.0f);
+	ScreenPrint((char*)"엔터 키를 누르면 종료", 54.0f, 45.0f);
 }
+
+void SceneVictory(UI_Object* _UI_Object)
+{
+	VictoryRender(_UI_Object);
+	if (GetAsyncKeyState(VK_RETURN))
+	{
+		exit(NULL);
+	}
+}
+
+void LoseRender()
+{
+	ScreenClear();
+	ScreenPrint((char*)"Game Over...", 60.0f, 25.0f);
+	ScreenPrint((char*)"엔터 키를 누르면 종료", 54.0f, 45.0f);
+}
+
 void SceneLose()
 {
+	LoseRender();
 
+	if (GetAsyncKeyState(VK_RETURN))
+	{
+		exit(NULL);
+	}
 }
