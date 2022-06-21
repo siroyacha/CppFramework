@@ -33,7 +33,7 @@ struct Information
 struct Object
 {
 	char* Name;
-	int Speed;
+	int Spin;
 	int Hp;
 	int Boom;
 	int Mode;
@@ -64,6 +64,8 @@ struct UI_Object
 
 	int PoliotTire;
 	int PoliotIncomeTire;
+
+	int Level;
 
 	int HighScore;
 };
