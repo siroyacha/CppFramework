@@ -33,7 +33,7 @@ Vector3 EnemyBulletDirection[128];
 
 Object* Item[32] = { nullptr };
 
-Object* Boss[4] = { nullptr };
+Object* Boss = new Object;
 
 int Score = 0;
 
@@ -168,7 +168,7 @@ void SceneLoad(Object* _Player, Object* _Cursor);
 DrawTextInfo BackGroundInitialize(int _i);
 
 void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
-	Object* _Terret[], Object* _Enemy[], Object* _Item[], Object* _Boss[],
+	Object* _Terret[], Object* _Enemy[], Object* _Item[], Object* _Boss,
 	Object* _Bullet[], Object* _EnemyBullet[], Object* _BossBullet[],
 	Object* _TerretBullet[], Object* _TerretBullet2[],
 	int _Countdown, int _Score);
@@ -179,9 +179,13 @@ void ClearRender();
 
 void SceneClear(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
 
-void FailRender();
+void FailRender(UI_Object* _UI_Object);
 
 void SceneFail(Object* _Player, Object* _Cursor, UI_Object* _UIObject);
+
+void VictoryRender(UI_Object* _UI_Object);
+
+void SceneVictory(UI_Object* _UI_Object);
 
 void LoseRender();
 
@@ -350,7 +354,11 @@ Object* CreatEnemy(const float _x, const float _y, const int _hp)
 {
 	Object* _Object = new Object;
 	Initialize(_Object, (char*)"훗", _x, _y, 0.0f, _hp, 0, (rand() % 4));
-
+	if (_Object->Hp > 5)
+		_Object->Info.Texture = (char*)"♥";
+	else
+		_Object->Info.Texture = (char*)"♡";
+	
 	return _Object;
 }
 
@@ -550,6 +558,9 @@ void SceneManager(Object* _Player, Object* _Cursor,  UI_Object* _UIObject)
 		break;
 	case FailScene:
 		SceneFail(_Player, _Cursor, _UIObject);
+		break;
+	case VictoryScene:
+		SceneVictory(_UIObject);
 		break;
 	case LoseScene:
 		SceneLose();
@@ -1151,6 +1162,8 @@ void SceneMap(Object* _Player, Object* _Cursor, UI_Object* _UI_Object)
 	Object* home = new Object;
 	Initialize(home, (char*)"H", 15.0f, 50.0f );
 
+	Boss = nullptr;
+
 	Distansce = GetDistance(home, _Cursor);
 
 	if (GetAsyncKeyState(VK_RETURN))
@@ -1170,7 +1183,7 @@ void SceneMap(Object* _Player, Object* _Cursor, UI_Object* _UI_Object)
 		else if (Distansce < 150)
 		{
 			Countdown = 150;
-			_UI_Object->Level += 2;
+			_UI_Object->Level += 12;
 		}
 
 		SceneState = LoadScene;
@@ -1291,7 +1304,7 @@ DrawTextInfo BackGroundInitialize(int _i)
 }
 
 void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
-	Object* _Terret[], Object* _Enemy[], Object* _Item[], Object* _Boss[],
+	Object* _Terret[], Object* _Enemy[], Object* _Item[], Object* _Boss,
 	Object* _Bullet[], Object* _EnemyBullet[], Object* _BossBullet[], 
 	Object* _TerretBullet[], Object* _TerretBullet2[],
 	int _Countdown, int _Score)
@@ -1368,7 +1381,7 @@ void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
 		}
 	}
 
-	if (_Boss[0]!= nullptr)
+	if (_Boss != nullptr)
 	{
 		for (int i = 0; i < 128; ++i)
 		{
@@ -1381,17 +1394,18 @@ void BattleRender(DrawTextInfo* _BackGround, Object* _Player, Object* _Cursor,
 		}
 
 		ScreenPrint((char*)"[", 10.0f, 4.0f, 3);
-		ScreenPrint((char*)"]", 12.0f + _Boss[0]->Hp, 4.0f, 3);
+		ScreenPrint((char*)"]", 12.0f + _Boss->Hp, 4.0f, 3);
 
-		for (int i = 0; i < _Boss[0]->Hp; ++i)
+		for (int i = 0; i < _Boss->Hp; ++i)
 		{
 			ScreenPrint((char*)"/", 11.0f + i, 4.0f, 12);
 		}
 
-		ScreenPrint(_Boss[0]->Info.Texture, _Boss[0]->TransInfo.Position.x - 3.0f, _Boss[0]->TransInfo.Position.y - 1.0f, 11);
-		ScreenPrint(_Boss[0]->Info.Texture, _Boss[0]->TransInfo.Position.x - 3.0f, _Boss[0]->TransInfo.Position.y, 11);
-		ScreenPrint(_Boss[0]->Info.Texture, _Boss[0]->TransInfo.Position.x - 3.0f, _Boss[0]->TransInfo.Position.y + 1.0f, 11);
-		ScreenPrint(_Boss[0]->Info.Texture, _Boss[0]->TransInfo.Position.x - 3.0f, _Boss[0]->TransInfo.Position.y + 2.0f, 11);
+		ScreenPrint(_Boss->Info.Texture, _Boss->TransInfo.Position.x - 3.0f, _Boss->TransInfo.Position.y - 1.0f, 11);
+		ScreenPrint(_Boss->Info.Texture, _Boss->TransInfo.Position.x - 3.0f, _Boss->TransInfo.Position.y, 11);
+		ScreenPrint(_Boss->Info.Texture, _Boss->TransInfo.Position.x - 3.0f, _Boss->TransInfo.Position.y + 1.0f, 11);
+		ScreenPrint(_Boss->Info.Texture, _Boss->TransInfo.Position.x - 3.0f, _Boss->TransInfo.Position.y + 2.0f, 11);
+		
 	}
 
 	for (int i = 0; i < 32; i++)
@@ -1449,7 +1463,7 @@ void SceneBattle(Object* _Player, Object* _Cursor, UI_Object* _UI_Object)
 			{
 				srand((GetTickCount64() + i * i) * GetTickCount64());
 
-				Enemy[i] = CreatEnemy(float(rand() % 150), 1.0f, 2 + 1*(0.2 * _UI_Object->Level));
+				Enemy[i] = CreatEnemy(float(rand() % 150), 1.0f, 1 + (1 * (rand() % _UI_Object->Level)));
 
 				break;
 			}
@@ -1517,25 +1531,22 @@ void SceneBattle(Object* _Player, Object* _Cursor, UI_Object* _UI_Object)
 		}
 	}
 
-	if (Score == 20)
-	{
-		for (int i = 0; i < 4; ++i)
-			Boss[i] = CreatBoss(70.0f, 10.0f, 5.0f, 50 * _UI_Object->Level);
-	}
-
-	if (Boss[0])
+	if (Score >= 20 && Boss == nullptr)
+			Boss = CreatBoss(70.0f, 10.0f, 5.0f, 50 * _UI_Object->Level);
+	
+	if (Boss != nullptr)
 	{
 		for (int i = 0; i < 128; ++i)
 		{
-			if (BossBullet[i] == nullptr && Boss[0]->Time + 1000 < GetTickCount64())
+			if (BossBullet[i] == nullptr && Boss->Time + 1000 < GetTickCount64())
 			{
 				BossBullet[i] = CreatBullet(
-					Boss[0]->TransInfo.Position.x + (float)(rand() % 6),
-					Boss[0]->TransInfo.Position.y + 2.0f,
+					Boss->TransInfo.Position.x + (float)(rand() % 6),
+					Boss->TransInfo.Position.y + 2.0f,
 					_UI_Object->Level);
 
-				BossBulletDirection[i] = GetDirection(_Player, Boss[0]);
-				Boss[0]->Time = GetTickCount64();
+				BossBulletDirection[i] = GetDirection(_Player, Boss);
+				Boss->Time = GetTickCount64();
 
 				break;
 			}
@@ -1576,19 +1587,19 @@ void SceneBattle(Object* _Player, Object* _Cursor, UI_Object* _UI_Object)
 				}
 			}
 
-			if (Boss[0] != nullptr)
+			if (Boss != nullptr)
 				if (TerretBullet[i] != nullptr)
 				{
-					if (Collision(TerretBullet[i], Boss[0]))
+					if (Collision(TerretBullet[i], Boss))
 					{
 						delete TerretBullet[i];
 						TerretBullet[i] = nullptr;
 
-						--Boss[0]->Hp;
-						if (Boss[0]->Hp <= 0)
+						--Boss->Hp;
+						if (Boss->Hp <= 0)
 						{
-							delete Boss[0];
-							Boss[0] = nullptr;
+							delete Boss;
+							Boss = nullptr;
 
 							SceneState = ClearScene;
 						}
@@ -1636,19 +1647,19 @@ void SceneBattle(Object* _Player, Object* _Cursor, UI_Object* _UI_Object)
 				}
 			}
 
-			if (Boss[0] != nullptr)
+			if (Boss != nullptr)
 				if (TerretBullet2[i] != nullptr)
 				{
-					if (Collision(TerretBullet2[i], Boss[0]))
+					if (Collision(TerretBullet2[i], Boss))
 					{
 						delete TerretBullet2[i];
 						TerretBullet2[i] = nullptr;
 
-						--Boss[0]->Hp;
-						if (Boss[0]->Hp <= 0)
+						--Boss->Hp;
+						if (Boss->Hp <= 0)
 						{
-							delete Boss[0];
-							Boss[0] = nullptr;
+							delete Boss;
+							Boss = nullptr;
 
 							SceneState = ClearScene;
 						}
@@ -1702,21 +1713,21 @@ void SceneBattle(Object* _Player, Object* _Cursor, UI_Object* _UI_Object)
 
 			}
 
-			if (Boss[0] != nullptr)
+			if (Boss != nullptr)
 				if (Bullet[i] != nullptr)
 				{
-					if (Collision(Bullet[i], Boss[0]))
+					if (Collision(Bullet[i], Boss))
 					{
-						Boss[0]->Hp = Boss[0]->Hp - Bullet[i]->Hp;
+						Boss->Hp = Boss->Hp - Bullet[i]->Hp;
 						Score = Score + Bullet[i]->Hp;
 
 						delete Bullet[i];
 						Bullet[i] = nullptr;
 
-						if (Boss[0]->Hp <= 0)
+						if (Boss->Hp <= 0)
 						{
-							delete Boss[0];
-							Boss[0] = nullptr;
+							delete Boss;
+							Boss = nullptr;
 
 							SceneState = ClearScene;
 						}
@@ -1999,15 +2010,15 @@ void SceneBattle(Object* _Player, Object* _Cursor, UI_Object* _UI_Object)
 				}
 			}
 
-			if (Boss[0])
+			if (Boss)
 			{
-				Boss[0]->Hp -= 10;
-				if (Boss[0]->Hp<10)
+				Boss->Hp -= 10;
+				if (Boss->Hp<10)
 					Score += 5;
-				if (Boss[0]->Hp <= 0)
+				if (Boss->Hp <= 0)
 				{
-					delete Boss[0];
-					Boss[0] = nullptr;
+					delete Boss;
+					Boss = nullptr;
 
 					SceneState = ClearScene;
 				}
@@ -2120,9 +2131,9 @@ void SceneBattle(Object* _Player, Object* _Cursor, UI_Object* _UI_Object)
 void ClearRender()
 {
 	ScreenClear();
-	ScreenPrint((char*)"미션 클리어!", 74.0f, 25.0f);
+	ScreenPrint((char*)"미션 클리어!", 68.0f, 25.0f);
 
-	ScreenPrint((char*)"엔터 키를 누르면 정보 화면으로 돌아갑니다", 34.0f, 45.0f);
+	ScreenPrint((char*)"엔터 키를 누르면 정보 화면으로 돌아갑니다", 56.0f, 45.0f);
 
 }
 
@@ -2202,21 +2213,32 @@ void SceneClear(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 	_Player->Boom = 3;
 	_Player->Mode = 1;
 
+
 	if (GetAsyncKeyState(VK_RETURN))
 	{
-		Initialize(_Cursor, (char*)"↖", 49.0f, 43.0f);
-		SceneState = InfoScene;
+		if (_UIObject->Level > 5)
+			SceneState = VictoryScene;
+		
+		else
+		{
+			Initialize(_Cursor, (char*)"↖", 49.0f, 43.0f);
+			_UIObject->Level = 0;
+			SceneState = InfoScene;
+		}
 	}
+	
 	ClearRender();
 }
 
-void FailRender()
+void FailRender(UI_Object* _UIObject)
 {
 	ScreenClear();
 	ScreenPrint((char*)"미션 실패...", 74.0f, 25.0f);
-	ScreenPrint((char*)"기지가 X의 데미지를 입었습니다...", 74.0f, 26.0f);
+	ScreenPrint((char*)"기지가", 60.0f, 28.0f);
+	ScreenPrint(	_UIObject->Hp - (500 + (_UIObject->BaseDefenceTire * 100)), 68.0f, 28.0f);
+	ScreenPrint((char*)"의 데미지를 입었습니다...", 73.0f, 28.0f);
 
-	ScreenPrint((char*)"엔터 키를 누르면 정보 화면으로 돌아갑니다", 54.0f, 45.0f);
+	ScreenPrint((char*)"엔터 키를 누르면 정보 화면으로 돌아갑니다", 58.0f, 45.0f);
 }
 
 void SceneFail(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
@@ -2224,7 +2246,6 @@ void SceneFail(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 	LoadCount = 10;
 	Countdown = 150;
 	
-	_UIObject->Hp = _UIObject->Hp - 500 + (_UIObject->BaseDefenceTire * 100);
 	if (_UIObject->HighScore < Score)
 		_UIObject->HighScore = Score;
 
@@ -2292,33 +2313,38 @@ void SceneFail(Object* _Player, Object* _Cursor, UI_Object* _UIObject)
 	_Player->Boom = 3;
 	_Player->Mode = 1;
 
-	if (_UIObject->Hp <= 0)
-	{
-		SceneState = LoseScene;
-	}
 
 	if (GetAsyncKeyState(VK_RETURN))
 	{
-		Initialize(_Cursor, (char*)"↖", 49.0f, 43.0f);
-		SceneState = InfoScene;
+		_UIObject->Hp = _UIObject->Hp - (500 + (_UIObject->BaseDefenceTire * 100));
+
+		if (_UIObject->Hp <= 0)
+		{
+			SceneState = LoseScene;
+		}
+		else
+		{
+			Initialize(_Cursor, (char*)"↖", 49.0f, 43.0f);
+			SceneState = InfoScene;
+		}
 	}
-	FailRender();
+	FailRender(_UIObject);
 }
 
 void VictoryRender(UI_Object* _UI_Object)
 {
 	ScreenClear();
-	ScreenPrint((char*)"승리!", 60.0f, 25.0f);
-	ScreenPrint((char*)"적군의 공격에서 기지를 성공적으로 방어해냈습니다!", 34.0f, 27.0f);
-	ScreenPrint((char*)"최고 점수는", 54.0f, 30.0f);
-	ScreenPrint(_UI_Object->HighScore, 66.0f, 30.0f);
-	ScreenPrint((char*)"엔터 키를 누르면 종료", 54.0f, 45.0f);
+	ScreenPrint((char*)"승리!", 70.0f, 25.0f);
+	ScreenPrint((char*)"적군의 공격에서 기지를 성공적으로 방어해냈습니다!", 50.0f, 27.0f);
+	ScreenPrint((char*)"최고 점수는", 64.0f, 30.0f);
+	ScreenPrint(_UI_Object->HighScore, 76.0f, 30.0f);
+	ScreenPrint((char*)"ESC를 누르면 종료", 64.0f, 45.0f);
 }
 
 void SceneVictory(UI_Object* _UI_Object)
 {
 	VictoryRender(_UI_Object);
-	if (GetAsyncKeyState(VK_RETURN))
+	if (GetAsyncKeyState(VK_ESCAPE))
 	{
 		exit(NULL);
 	}
